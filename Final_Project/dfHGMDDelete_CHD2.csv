@@ -1,0 +1,8 @@
+"HGMDaccession","HGMD.deletion","Consequence","Variantclass","Reported.phenotype","Reference","Extrainformation"
+NA,"GAAAG^516ACCATcCAGACCATAT","c.1552delC","DM?","Moderate intellectual disability, autism spectrum disorder and obsessive compulsive disorder","Bowling (2017) Genome Med 9,","hg38  hg19 COM"
+NA,"GAAAGAT^603AAG_E15I15_gTGTGTAATTA","c.1809+1delG","DM?","Intellectual disability, nonsyndromic","Rauch (2012) Lancet 380, 1674O'Roak (2014) Nat Commun 5: 5595 [Additional phenotype]","hg38  hg19 COM  dbSNP"
+NA,"AATGAT^626GACTctttATTGTATAAA","c.1880_1883delCTTT","DM","Epileptic encephalopathy","Møller (2016) Mol Syndromol 7, 210","hg38  hg19"
+NA,"CTTTT^964AATAAagaaGAGCTGACAG","c.2895_2898delAGAA","DM?","Autism","O'Roak (2014) Nat Commun 5, 5595","hg38  hg19 COM"
+NA,"GAAAAA^1244AAAAa_E29I29_GTGAGTATAT","c.3734delA","DM?","Autism spectrum disorder","Bi (2012) Hum Mutat 33, 1635Galizia (2015) Brain 138: 1198 [Additional phenotype]","hg38  hg19"
+NA,"GGAAA^1410GACAAagaaGGGGACAAGG","c.4233_4236delAGAA","DM","Epilepsy, generalised","Galizia (2015) Brain 138, 1198","hg38  hg19"
+NA,"GAAAGA^1418AAGAagtcaaaagataagaaagaGAAG_EI_GTAATG","c.4256_4274del19","DM","Epilepsy, myoclonic-atonic","Trivisano (2015) Epilepsy Behav 51, 53","hg38  hg19"

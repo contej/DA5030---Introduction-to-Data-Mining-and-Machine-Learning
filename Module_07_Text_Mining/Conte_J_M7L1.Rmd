@@ -1,0 +1,111 @@
+---
+title: "M8L1 Homework Assignment"
+author: "Joshua Conte"
+date: "November 12, 2017"
+output: 
+  pdf_document:
+    fig_caption: true
+    latex_engine: xelatex
+header-includes:
+    - \usepackage{fancyhdr}
+    - \pagestyle{fancy}
+    - \fancyhead[CO,CE]{DA5030}
+    - \fancyfoot[CO,CE]{Assignment M8L1 by Joshua Conte}
+    - \fancyfoot[LE,RO]{\thepage}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+&nbsp;
+
+
+\clearpage
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{5}
+\pagebreak
+
+# M8L1 Homework Assignment
+R studio was configured with the following parameters before beginning the project:
+```{r Configure RStudio, warning = FALSE, message = FALSE}
+# clears the console in RStudio
+cat("\014") 
+
+# clears environment
+rm(list = ls())  
+
+# Load required packages
+library(RTextTools)
+library(tm)
+library(wordcloud)
+library(SnowballC)
+```
+
+## Perform the following tasks:
+###Create a term by document matrix for the Dr. Seuss quote. Assume each sentence is a new document.
+The tm package has a number of operations for Term-Document Matrices (like clustering, classifications, etc.).
+```{r}
+quote<-"You have brains in your head. You have feet in your shoes. You can steer yourself in any direction you choose. You're on your own, and you know what you know. And you are the guy who'll decide where to go."
+seuss <- strsplit(quote, "[.]")
+seuss.corpus <- Corpus(DataframeSource(data.frame(seuss)))
+seuss.corpus
+inspect(seuss.corpus)
+seuss.corpus[1]
+writeLines(as.character(seuss.corpus[1]))
+writeLines(as.character(seuss.corpus[1:3]))
+
+# Eliminating Extra Whitespace
+seuss.clean<-tm_map(seuss.corpus, stripWhitespace)
+
+# Convert to Lower Case
+seuss.clean.lc <- tm_map(seuss.clean, content_transformer(tolower))
+writeLines(as.character(seuss.clean.lc[1]))
+
+# Remove Stopwords
+seuss.clean <- tm_map(seuss.clean.lc, removeWords, stopwords("english"))
+writeLines(as.character(seuss.clean.lc[1]))
+
+# Building a Document-Term Matrix
+seuss.tdm <- TermDocumentMatrix(seuss.clean, control = list(minWordLength = 1))
+seuss.tdm
+```
+
+
+###Calculate the td-idf for three terms in the text. Assume each sentence is a new document.
+This can be completed by inspecting the term by document matrix
+```{r inspect}
+inspect(seuss.tdm[1:3,1:5])
+```
+
+###Write a regular expression to segment the Dr. Seuss quote in to seperate sentences.
+The easiest and fastest way to do this is using strsplit:
+```{r segment}
+strsplit(quote, "[.]")
+```
+
+
+###Write a regular expression to tokenize the Dr. Seuss quote.
+Tokenization is the task of chopping it up into pieces, called tokens. This is often done by throwing away certain characters, such as punctuation. 
+```{r tokenize}
+# Remove punctuation
+token<-gsub('[[:punct:] ]+',' ',quote)
+
+# Breakup into seperate chunks
+strsplit(token, " ") 
+```
+
+
+###Create a frequency signature for the Dr. Seuss quote. Assume each sentence is a new document.
+This can be done with wordcloud:
+```{r frequency signature}
+# Operations on Term-Document Matrices
+# Frequent Terms and Associations
+findFreqTerms(seuss.tdm, lowfreq=3)
+# Word Cloud
+m <- as.matrix(seuss.tdm)
+# calculate the frequency of words
+v <- sort(rowSums(m), decreasing=TRUE)
+myNames <- names(v)
+d <- data.frame(word=myNames, freq=v)
+wordcloud(d$word, d$freq, min.freq=3)
+```

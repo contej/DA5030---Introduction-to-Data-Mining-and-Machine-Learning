@@ -1,0 +1,470 @@
+---
+title: "M4L2 Homework Assignment"
+author: "Joshua Conte"
+date: "October 8, 2017"
+output: 
+  pdf_document:
+    fig_caption: true
+    latex_engine: xelatex
+header-includes:
+    - \usepackage{fancyhdr}
+    - \pagestyle{fancy}
+    - \fancyhead[CO,CE]{DA5030}
+    - \fancyfoot[CO,CE]{Assignment M4L2 by Joshua Conte}
+    - \fancyfoot[LE,RO]{\thepage}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+&nbsp;
+
+
+\clearpage
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{5}
+\pagebreak
+
+# M4L2 Homework Assignment
+R studio was configured with the following parameters before beginning the project:
+```{r Configure RStudio, warning = FALSE, message = FALSE}
+# clears the console in RStudio
+cat("\014") 
+
+# clears environment
+rm(list = ls())  
+
+# Load required packages
+require(ggplot2)
+require(cluster)
+require(amap)
+require(useful)
+```
+
+## Load Data.   
+I opened the [Wholesale customers Data Set](https://archive.ics.uci.edu/ml/datasets/Wholesale+customers) using read.csv2 and downloaded it directly from the UC Irvine Machine Learning Repository. 
+
+To format the data, the data is separated by ',', stringsAsFactors = FALSE so that the strings in a data frame will be treated as plain strings and not as factor variables. I set na strings for missing data. Once the data was loaded I added the column names and changed the data types to numeric and finally removed the text data type.
+
+Below is my R code:
+```{r open and format the dataset}
+# Some csv files are really big and take a while to open.  This command checks to
+# see if it is already opened, if it is, it does not open it again.
+# I also omitted the first column
+if (!exists("dfWCD")) {
+dfWCD <-
+  read.csv2("Wholesale customers data.csv",
+    sep = ",",
+    stringsAsFactors = FALSE,
+    na.strings=c("","NA")
+  )
+# Add a column so I know which study the data is refereing to
+study <- sprintf("study_%s",seq(1:440))
+dfWCD$study<-study
+}
+
+# Download directly from site (unreliable from Ecuador)
+# if (!exists("dfWCD")) {
+# dfWCD <-
+#   read.csv2(
+#     url(
+#       "https://archive.ics.uci.edu/ml/machine-learning-databases/00292/Wholesale customers data.csv"
+#     ),
+#     sep = ",",
+#     stringsAsFactors = FALSE,
+#     na.strings=c("","NA")
+#   )
+# # Add a column so I know which study the data is refereing to
+# study <- sprintf("study_%s",seq(1:440))
+# dfWCD$study<-study
+# }
+
+# change 2 to 24 to numeric
+dfWCD[1:8] <- sapply(dfWCD[1:8], as.numeric)
+
+# Print first lines
+str(dfWCD)
+
+# Select the first 8 lines for plotting
+dfWCD2<-dfWCD[1:8]
+
+# Print first lines
+str(dfWCD2)
+```
+
+##Clustering
+Clustering is grouping like with like such that:
+
+1. Similar objects are close to one another within the same cluster.
+2. Dissimilar to the objects in other clusters.
+
+###Understanding the data
+The data set refers to clients of a wholesale distributor in Portugal. It includes the annual spending in monetary units (m.u.) on diverse product categories. The data has the following attribute information:
+
+1. FRESH: annual spending (m.u.) on fresh products (Continuous); 
+2. MILK: annual spending (m.u.) on milk products (Continuous); 
+3. GROCERY: annual spending (m.u.)on grocery products (Continuous); 
+4. FROZEN: annual spending (m.u.)on frozen products (Continuous) 
+5. DETERGENTS_PAPER: annual spending (m.u.) on detergents and paper products (Continuous) 
+6. DELICATESSEN: annual spending (m.u.)on and delicatessen products (Continuous); 
+7. CHANNEL: customer channel - 1 = Horeca (Hotel/Restaurant/Cafe) or 2 = Retail channel (Nominal) 2 = Oporto or 3 = Other (Nominal) 
+
+###Number of Clusters
+Before I can begin clustering analysis, I need to determine the number of clusters.
+For determining "the right number of clusters", for this analysis I will use the averaged Silhouette width and Gap statistic and Hartigan's rule.
+
+####Averaged Silhouette Width and Gap Statistic
+```{r determining number of clusters}
+# Determining number of clusters 
+sos <- (nrow(dfWCD2) - 1) * sum(apply(dfWCD2, 2, var))
+for (i in 2:10)
+  sos[i] <- sum(kmeans(dfWCD2, centers = i)$withinss)
+plot(1:10,
+     sos,
+     type = "b",
+     xlab = "Number of Clusters",
+     ylab = "sum of squares")
+plot(2:10,
+     sos[c(2:10)],
+     type = "b",
+     xlab = "Number of Clusters",
+     ylab = "sum of squares")
+
+```
+
+####Hartigan's rule
+```{r Hartigans rule}
+# Hartigans's rule FitKMean (similarity) 
+# require(useful) 
+best<-FitKMeans(dfWCD2,max.clusters=10, seed=111) 
+PlotHartigan(best)
+```
+
+####Number of Clusters Results
+Based off of the graphs above it looks like I should perform clustering with 3 to 5 clusters. The analysis looks better with 4 after some trial and error.
+
+###Partitioning-based clustering 
+Partitioning algorithms construct various partitions and then evaluate them by some criterion Hierarchy algorithms, two examples are k-means and k-mediods algorithms.
+
+####k-means
+k-means clustering is a method of vector quantization, originally from signal processing. k-means clustering aims to partition n observations into k clusters in which each observation belongs to the cluster with the nearest mean, serving as a prototype of the cluster. This results in a partitioning of the data space into Voronoi cells.
+
+Below I apply the k-means algorithm:
+```{r clustering analysis}
+# Clustering with 4 clusters
+k <- 4
+dfWCD2.4.cluster <- kmeans(dfWCD2,k)
+dfWCD2.4.cluster
+```
+
+This calculation makes the k-means calculation more stable, it performs this analysis 1000 times and takes the ones with the least error:
+```{r clustering analysis 2}
+# Clustering with 4 clusters
+k <- 4
+trails<-1000
+dfWCD2.4.cluster <- kmeans(dfWCD2,k, nstart = trails)
+dfWCD2.4.cluster
+```
+
+There is 1 cluster that I need to look at with a value 7. Below is a table looking at all of the information 
+```{r clustering analysis 3}
+# Clustering with 5 clusters
+cm<-table(dfWCD$study,dfWCD2.4.cluster$cluster) 
+head(cm)
+
+# Get cluster of 7
+# clusterOf7<-cm[,4][cm[,4]>0]
+# clusterOf7
+
+
+# Look at the group of 7
+dfSeven <- dfWCD[c(212, 334, 48, 62, 66, 86, 87), ]
+dfSeven
+```
+
+I cannot make too much sense of this data and will review the centroid plot.
+
+#####Evaluating model performance 
+
+```{r}
+# Evaluating model performance 
+# look at the size of the clusters
+dfWCD2.4.cluster$size
+# look at the cluster centers
+dfWCD2.4.cluster$centers
+names(dfWCD2)
+
+# mean of 'Fresh' by cluster 
+Fresh<-aggregate(data = dfWCD2, Fresh ~ dfWCD2.4.cluster$cluster, mean)
+Fresh
+
+# mean of 'Milk' by cluster 
+Milk<-aggregate(data = dfWCD2, Milk ~ dfWCD2.4.cluster$cluster, mean)
+Milk
+
+# mean of 'Grocery' by cluster 
+Grocery<-aggregate(data = dfWCD2, Grocery ~ dfWCD2.4.cluster$cluster, mean)
+Grocery
+
+# mean 'Detergents_Paper'  by cluster 
+DP<-aggregate(data = dfWCD2, Detergents_Paper ~ dfWCD2.4.cluster$cluster, mean)
+DP
+
+# mean 'Delicassen'  by cluster 
+Delicassen<-aggregate(data = dfWCD2, Delicassen ~ dfWCD2.4.cluster$cluster, mean)
+Delicassen
+```
+
+#####Multidimensional scaling (MDS)
+Multidimensional scaling (MDS) is a means of visualizing the level of similarity of individual cases of a high-dimenional dataset.
+
+MDS attempts to find an embedding from the I objects into $\mathbb{R}^N$ such that distances are preserved.
+
+Below are some MDS plots:
+```{r Plotting Clusters}
+plot(dfWCD2,col=dfWCD2.4.cluster$cluster)     # Plot Clusters
+
+# Plot drinks and mcv
+ plot(dfWCD2[c("Fresh","Milk")],col=dfWCD2.4.cluster$cluster)      
+ points(dfWCD2.4.cluster$centers, col = 1:2, pch = 8) 
+
+# Centroid Plot against 1st two discriminant functions
+clusplot(dfWCD2, dfWCD2.4.cluster$cluster, color=TRUE, shade=TRUE, labels=2, lines=0)
+# library(fpc)
+# plotcluster(dfWCD2,dfWCD2.4.cluster$cluster)
+```
+
+The plots look good, the data is clustered as expected. The centroid plot looks ok. I can see the small cluster is grouped ok, however, there is some overlaping with a couple of clusters in the corner, it seems like there is a lot going on in the upper right corner, but I do not think this is an issue.
+
+####K-medoids clustering in R
+The K-medoids or Partitioning Around Medoids (PAM) algorithm is related to the k-means algorithm and but uses medoid shifts rather than reassigning points based on Euclidean distance. Each cluster is represented by one of the objects (i.e. points) in the cluster A medoid is a point in a cluster whose dissimilarity to all the points in the cluster is minimal. Medoids are similar in concept to means or centroids, but medoids are always members of the data set. That is, in 2D Cartesian space a centroid can be any valid x.y coordinate. Whereas a medoid must be one of the data points. 
+
+Below I use R to apply the k-medoids algorithm:
+```{r K-medoids clustering}
+# PAM
+k<-4
+dfWCD2.pam.4.clust<- pam(dfWCD2,k, keep.diss = TRUE, keep.data = TRUE)
+dfWCD2.pam.4.clust
+plot(dfWCD2.pam.4.clust, which.plots = 2)
+# long lines good - means greater within cluster similarity
+
+# Centroid Plot against 1st two discriminant functions
+clusplot(dfWCD2.pam.4.clust, color=TRUE, shade=TRUE, labels=2, lines=0)
+```
+
+The silhouette plot dosn't loof too good, long lines are good, short ones are not.  It appears that there are more short lines.
+
+The centroid plot looks good, but there seems to be a little overlap with the clusters 
+
+##Confusion Plots
+confusion plot is a plot of the confusion matrix. A confusion matrix, also known as a contingency table or an error matrix.
+A confusion matrix is a 2x2 table with counts of the following in each of its quadrents.
+true positive (TP) 
+eqv. with hit true negative (TN) 
+eqv. with correct rejection 
+false positive (FP) 
+eqv. with false alarm, Type I error 
+false negative (FN) eqv. with miss, Type II error
+
+To make a confusion plot I am going to make data with 2 clusters and compare how many times milk was purchased above the mean (above 5796.27) and how many times grocery was purchased above the mean (above 7951.28) for both k-means and pam.
+
+Below is the R code:
+```{r confusion for milk}
+# Clustering with 2 clusters
+k <- 2
+trails<-1000
+
+# k-means
+dfWCD2.2.cluster <- kmeans(dfWCD2,k, nstart = trails)
+
+# Confusion matrix of Milk
+cmMilk<-table(dfWCD2$Milk>5796.27,dfWCD2.2.cluster$cluster)
+cmMilk
+plot(cmMilk)
+
+# pam
+dfWCD2.pam.2.clust<- pam(dfWCD2,k, keep.diss = TRUE, keep.data = TRUE)
+
+# Confusion matrix of Milk
+cmMilkP<-table(dfWCD2$Milk>5796.27,dfWCD2.pam.2.clust$cluster)
+cmMilkP
+plot(cmMilkP)
+```
+For the milk data, both the k-means and pam data show me that most of the data is about 50/50 for both groups, as I would expect.
+
+```{r confusion for gammagt}
+# Clustering with 2 clusters
+k <- 2
+trails<-1000
+
+# k-means
+dfWCD2.2.cluster <- kmeans(dfWCD2,k, nstart = trails)
+
+# Confusion matrix of grocery
+cmGrocery<-table(dfWCD2$Grocery>7951.28,dfWCD2.2.cluster$cluster)
+cmGrocery
+plot(cmGrocery)
+
+# pam
+dfWCD2.pam.2.clust<- pam(dfWCD2,k, keep.diss = TRUE, keep.data = TRUE)
+
+# Confusion matrix of Grocery
+cmGroceryP<-table(dfWCD2$Grocery>7951.28,dfWCD2.pam.2.clust$cluster)
+cmGroceryP
+plot(cmGroceryP)
+```
+The grocery data is a little different, the larger group is almost 60/40 (false/true), but the smaller group has 2/3 false to true.
+
+##Gap statistic
+clusGap() calculates a goodness of clustering measure, the “gap” statistic. For each number of clusters k, it compares $\log(W(k))$ with $E^*[\log(W(k))]$ where the latter is defined via bootstrapping, i.e. simulating from a reference distribution.  
+
+maxSE(f, SE.f) determines the location of the maximum of f, taking a “1-SE rule” into account for the *SE* methods. The default method "firstSEmax" looks for the smallest k such that its value f(k) is not more than 1 standard error away from the first local maximum. This is similar but not the same as "Tibs2001SEmax", Tibshirani et al's recommendation of determining the number of clusters from the gap statistics and their standard deviations.  
+```{r Gap statistic}
+gap <- clusGap(dfWCD2, FUNcluster = pam, K.max = 10) # Bootstrapping
+gap$Tab
+gdf <- as.data.frame(gap$Tab)
+head(gdf)
+qplot(
+  x = 1:nrow(gdf),
+  y = logW,
+  data = gdf,
+  geom = "line",
+  color = "red"
+) +
+  geom_point(aes(y = logW), color = "orange") +
+  geom_line(aes(y = E.logW), color = "blue") +
+  geom_point(aes(y = E.logW), color = "purple")
+# Gap statistic
+qplot(
+  x = 1:nrow(gdf),
+  y = gap,
+  data = gdf,
+  geom = "line",
+  color = "red"
+) +
+  geom_point(aes(y = gap), color = "orange") +
+  geom_errorbar(aes(ymin = gap - SE.sim, ymax = gap + SE.sim), color = "brown")
+```
+
+It looks like around 3 or 4, the gap increases at a higher slope, so I think a k of 4 is good.
+
+##Hierarchical clustering in R
+In hierarchical clustering the idea is to group data objects (i.e. points) into a tree of clusters. That is, hierarchical clustering is a method of cluster analysis which seeks to build a hierarchy of clusters.
+
+These trees (hierarchies) generally fall into two types:
+
+1. Agglomerative hierarchical clustering: Initially each data object (i.e. point) in its own cluster. Iteratively the clusters are merged together from the "bottom-up." The two most similar/closest objects are aggreated in to the same cluster/data object. Then the next two, until there is just one cluster/data object. This agglomerative approach result in "straggly" (long and thin) clusters due to a chaining effect. It is also sensitive to noise.
+2. Divisive hierarchical clustering: in divisive hierarchical clustering all data objects (i.e. points) are initially in one cluster. These clusters are successively divided recursivley in a "top-down" manner. The cluster is broken in to two clusters that are most dissimilar. Then each of those clusters is broken in to two cluster that are most dissimilar. This continues until each clsuter is a single data object (i.e. point).
+
+Below is my analysis using Hierarchical clustering:
+```{r Hierarchical clustering}
+dfWCD2.h.clust<- hclust(d=dist(dfWCD2))
+plot(dfWCD2.h.clust)
+dfWCD2.h.clust.si<- hclust(dist(dfWCD2), method = "single")
+dfWCD2.h.clust.co<- hclust(dist(dfWCD2), method = "complete")
+dfWCD2.h.clust.av<- hclust(dist(dfWCD2), method = "average")
+dfWCD2.h.clust.ce<- hclust(dist(dfWCD2), method = "centroid")
+dfWCD2.h.clust.me<- hclust(dist(dfWCD2), method = "ward.D")
+plot(dfWCD2.h.clust.si, labels = FALSE)
+plot(dfWCD2.h.clust.co, labels = FALSE)
+plot(dfWCD2.h.clust.av, labels = FALSE)
+plot(dfWCD2.h.clust.ce, labels = FALSE)
+plot(dfWCD2.h.clust.me, labels = FALSE)
+```
+
+###Plotting to deterimine the cluster level.
+```{r Plotting to deterimine the cluster level}
+plot(dfWCD2.h.clust, labels = FALSE)
+rect.hclust(dfWCD2.h.clust, k=3, border="red")
+rect.hclust(dfWCD2.h.clust, k=5, border="green")
+rect.hclust(dfWCD2.h.clust, k=9, border="blue")
+```
+
+###Hierarchical clustering using centroid clustering and squared Euclidean distance
+
+```{r centroid clustering and squared Euclidean distance}
+h_c <- hcluster(dfWCD2,link = "ave") # require(amap)
+plot(h_c)
+plot(h_c, hang = -1)
+
+
+### centroid clustering and squared Euclidean distance
+h_c<- hclust(dist(dfWCD2)^2, "cen")
+
+### Cutting the tree into 20 clusters and reconstruct upper part of the tree from cluster center
+memb <- cutree(h_c, k = 20)
+cent <- NULL
+for(k in 1:20){
+  cent <- rbind(cent, colMeans(dfWCD2[,-1][memb == k, , drop = FALSE]))
+}
+h_c1 <- hclust(dist(cent)^2, method = "cen", members = table(memb))
+opar <- par(mfrow = c(1, 2))
+plot(h_c,  labels = FALSE, hang = -1, main = "Original Tree")
+plot(h_c1, labels = FALSE, hang = -1, main = "Re-start from 20 clusters")
+par(opar)
+```
+
+###Other combinations 
+
+```{r Other combinations}
+## other combinations 
+
+h_c <- hcluster(dfWCD2,method = "euc",link = "ward", nbproc= 1,
+                doubleprecision = TRUE)
+plot(h_c, hang = -1)
+
+h_c <- hcluster(dfWCD2,method = "max",link = "single", nbproc= 2, 
+                doubleprecision = TRUE)
+plot(h_c, hang = -1)
+
+h_c <- hcluster(dfWCD2,method = "man",link = "complete", nbproc= 1,
+                doubleprecision = TRUE)
+plot(h_c, hang = -1)
+
+h_c <- hcluster(dfWCD2,method = "can",link = "average", nbproc= 2,
+                doubleprecision = TRUE)
+plot(h_c, hang = -1)
+
+h_c <- hcluster(dfWCD2,method = "bin",link = "mcquitty", nbproc= 1,
+                doubleprecision = FALSE)
+plot(h_c, hang = -1)
+
+h_c <- hcluster(dfWCD2,method = "pea",link = "median", nbproc= 2,
+                doubleprecision = FALSE)
+plot(h_c, hang = -1)
+
+h_c <- hcluster(dfWCD2,method = "cor",link = "centroid", nbproc= 1,
+                doubleprecision = FALSE)
+plot(h_c, hang = -1)
+
+h_c <- hcluster(dfWCD2,method = "spe",link = "complete", nbproc= 2,
+                doubleprecision = FALSE)
+plot(h_c, hang = -1)
+```
+
+
+##Questions
+
+**1. How did you choose a k for k-means? **
+I used a mixture of the averaged Silhouette width and Gap statistic, Hartigan's rule, gap analysis, and trial and error. I eventually settled with 4 after reviewing the gap analysis.
+
+**2. Evaluate the model performance. How do the clustering approaches compare on the same data? **
+K-means clustering with 4 clusters of sizes 93, 281, 59, 7.  The cluster of seven looked low, but after analysis it seemed ok. I started by analyzing the raw data, but I could not make much sense of the data until it was in the centroid plot, then it looked like it fit, the seven all clustered together nicely. Overall the plots look good too, in the individual plots I can see clustering and the clustering looks acceptable.
+
+**3. Generate and plot confusion matrices for the k-means and PAM. What do they tell you?**
+I plotted four different confusion plots, two for milk and two for grocery for k-means and pam. For the milk data, both the k-means and pam data show me that most of the data is about 50/50 for both groups, as I would expect. The grocery data is a little different, the larger group is almost 60/40 (false/true), but the smaller group has 2/3 false to true.
+
+**4. Generate centroid plots against the 1st two discriminant functions for k-means and PAM. What do they tell you? **
+For k-means, the centroid plot looks good. I can see that the small cluster is grouped ok, however, there is some overlapping with a couple of clusters, but I do not think this is an issue. The pam plot is similar, but there seems to be a little overlap with the clusters 
+
+**5. Generate silhouette plots for PAM. What do they tell you?**
+The silhouette plot doesn't look too good. A good plot should have a lot of long lines, it appears that there are more short lines with this data.
+
+**6. For the hierarchical clustering use all linkage methods (Single Link, Complete Link, Average Link, Centroid and Minimum energy clustering) and generate dendograms. How do they compare on the same data? **
+They all look different. The single is hard to read, the complete looks ok, the average and centroid have a couple clads going off to nowhere, and the ward plot looks the best, it is organized nicely.
+
+**7. For the hierarchical clustering use both agglomerative and divisive clustering with a linkage method of your choice and generate dendograms. How do they compare on the same data? **
+In section 1.5.3 I ran many different combinations to generate dendograms and they all look different. The mcquitty plot doesn't look like anything.
+
+**8. For the hierarchical clustering use centroid clustering and squared Euclidean distance and generate dendograms. How do they compare on the same data?**
+The original tree is hard to read, especially toward the bottom.  The re-start from 20 clusters looks great and it is easy to read.

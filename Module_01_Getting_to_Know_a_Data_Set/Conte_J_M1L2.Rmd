@@ -1,0 +1,373 @@
+---
+title: "M1L2 Homework Assignment"
+author: "Joshua Conte"
+date: "September 17, 2017"
+output: 
+  pdf_document:
+    fig_caption: true
+header-includes:
+    - \usepackage{fancyhdr}
+    - \pagestyle{fancy}
+    - \fancyhead[CO,CE]{DA5030}
+    - \fancyfoot[CO,CE]{Assignment M1L2 by Joshua Conte}
+    - \fancyfoot[LE,RO]{\thepage}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+&nbsp;
+
+
+\clearpage
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{5}
+\pagebreak
+
+# M1L2 Homework Assignment
+R studio was configured with the following parameters before beginning the project:
+```{r Configure RStudio, warning = FALSE, message = FALSE}
+# clears the console in RStudio
+cat("\014") 
+
+# clears environment
+rm(list = ls())  
+
+# Set working directory
+setwd("C:/R/DA5030/module_01")
+
+# Load required packages
+require(ggplot2)
+require(reshape2)
+library(knitr) # Used for making tables in this report
+```
+## Part 1: Cauchy distributions
+From Wikipedia, the Cauchy distribution, named after Augustin Cauchy, is a continuous probability distribution. It is also known, especially among physicists, as the Lorentz distribution (after Hendrik Lorentz), Cauchy-Lorentz distribution, Lorentz(ian) function, or Breit-Wigner distribution. The Cauchy distribution is the distribution of the x-intercept of a ray issuing from with a uniformly distributed angle. It is also the distribution of the ratio of two independent normally distributed random variables if the denominator distribution has mean zero.
+
+### Cauchy Probability Density Function
+I used the Cauchy distribution feature in R.  dcauchy is used for density location is x0 and scale is gamma. I used the same location and scale parameters in the Wikipedia example.
+
+For the ggplot info, I used lower limit of -5 and upper of 5. I used fun and args for the function and aes for aesthetic mappings. I added theme to make the plot more aesthetic too.
+```{r Cauchy Probability Density Function}
+# Cauchy Probability Density Function:
+
+x_lower <- -5
+x_upper <- 5
+
+ggplot(data.frame(x = c(x_lower , x_upper)), aes(x = x)) +
+  xlim(c(x_lower , x_upper)) +
+  stat_function(fun = dcauchy,
+                args = list(location = 0, scale = 0.5),
+                aes(colour = "0 & 0.5")) +
+  stat_function(fun = dcauchy,
+                args = list(location = 0, scale = 1),
+                aes(colour = "0 & 1")) +
+  stat_function(fun = dcauchy,
+                args = list(location = 0, scale = 2),
+                aes(colour = "0 & 2")) +
+  stat_function(fun = dcauchy,
+                args = list(location = -2, scale = 1),
+                aes(colour = "-2 & 1")) +
+  scale_color_manual("Location & Scale \n Parameters",
+                     values = c("green", "orange", "purple", "light blue")) +
+  labs(x = "\n x", y = "P(x) \n",
+       title = "Cauchy Probability Density Function") +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.title.x = element_text(
+      face = "bold",
+      colour = "blue",
+      size = 12
+    ),
+    axis.title.y = element_text(
+      face = "bold",
+      colour = "blue",
+      size = 12
+    ),
+    legend.title = element_text(face = "bold", size = 8),
+    legend.position = "right"
+  )
+```
+
+### Cauchy Cumulative Distribution Function
+This is the same as above but pcauchy is used for distribution function. 
+```{r Cauchy Cumulative Distribution Function}
+# Cauchy Cumulative Distribution Function:
+
+x_lower <- -5
+x_upper <- 5
+
+ggplot(data.frame(x = c(x_lower , x_upper)), aes(x = x)) +
+  xlim(c(x_lower , x_upper)) +
+  stat_function(fun = pcauchy,
+                args = list(location = 0, scale = 0.5),
+                aes(colour = "0 & 0.5")) +
+  stat_function(fun = pcauchy,
+                args = list(location = 0, scale = 1),
+                aes(colour = "0 & 1")) +
+  stat_function(fun = pcauchy,
+                args = list(location = 0, scale = 2),
+                aes(colour = "0 & 2")) +
+  stat_function(fun = pcauchy,
+                args = list(location = -2, scale = 1),
+                aes(colour = "-2 & 1")) +
+  scale_color_manual("Location & Scale \n Parameters",
+                     values = c("green", "orange", "purple", "light blue")) +
+  labs(x = "\n x", y = "P(x) \n",
+       title = "Cauchy Cumulative Distribution Function") +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.title.x = element_text(
+      face = "bold",
+      colour = "blue",
+      size = 12
+    ),
+    axis.title.y = element_text(
+      face = "bold",
+      colour = "blue",
+      size = 12
+    ),
+    legend.title = element_text(face = "bold", size = 8),
+    legend.position = "right"
+  )
+```
+
+## Part 2: M01_Lesson_02_Q1
+### load the file M01_Lesson_02_Q1.csv.   
+I opened the data using read.csv2 and removed the first column since it appears to be row numbers.  I also changed the data to numeric so I could analyze it with R.
+
+Below is my R code:
+```{r open csv file}
+# Some VCF files are really big and take a while to open.  This command checks to
+# see if it is already opened, if it is, it does not open it again.
+# I also omitted the first column
+if (!exists("csv.df")) {
+  csv.df <-
+    read.csv2(
+      'M01_Lesson_02_Q1.csv',
+      sep = ",",
+      stringsAsFactors = FALSE,
+      row.names = NULL,
+      header = TRUE,
+      colClasses = c("NULL", NA, NA, NA, NA, NA)
+    )
+}
+
+# Check to make sure the data is in numeric form for analysis:
+sapply(csv.df, class)
+
+# It looks like the data is in character and integer form and I will change it all
+# to numeric for easy analysis:
+df1 <-
+  data.frame(sapply(csv.df, function(x)
+    as.numeric(as.character(x))))
+
+# Check to make sure it is in numeric form:
+sapply(df1, class)
+```
+
+### How is the data distributed?
+I concluded that:
+
+* column A is Normal
+* column B is Normal
+* column C is Poisson
+* column D is Poisson
+* column E is Uniform
+
+My analysis is listed below:
+
+To understand how the data is distributed, I needed to review the data and plot it too. I began with a Shapiro test to see if the P value was greater than 0.05 to confirm that we cannot reject the hypothesis that the sample comes from a population which has a normal distribution. Then use QQ plots to verify the results:
+```{r data distributed analysis 1}
+
+# I begain by running a Shapiro-Wilk test:
+shapiro.test(df1$A)
+shapiro.test(df1$B)
+shapiro.test(df1$C)
+shapiro.test(df1$D)
+shapiro.test(df1$E)
+
+# Then I plotted the data:
+qqnorm(df1$A)
+qqline (df1$A, col=2)
+
+qqnorm(df1$B)
+qqline (df1$B, col=2)
+
+qqnorm(df1$C)
+qqline (df1$C, col=2)
+
+qqnorm(df1$D)
+qqline (df1$D, col=2)
+
+qqnorm(df1$E)
+qqline (df1$E, col=2)
+```
+
+Looking at the results of the Shapiro-Wilk test, regarding A and B, we cannot reject the hypothesis that the sample comes from a population which has a normal distribution.  For C, D, and E we can reject the hypothesis that the sample comes from a population which has a normal distribution.  Verifying the plots, A and B are normal and the others are not.
+
+Regarding C, D , and E, I needed to run some more tests using fitdistrplus:
+```{r data distributed analysis 2}
+library(fitdistrplus)
+
+# This plots the data
+descdist(df1$C, discrete = FALSE)
+descdist(df1$D, discrete = FALSE)
+descdist(df1$E, discrete = FALSE)
+```
+E is uniform (see below too), but C and D require additional tests but will be binomial or Poisson.
+
+Based off of the fitdist plots, C is Poisson and D is binomial:
+```{r data distributed analysis 3}
+# For C
+fit.pois2<-fitdist(df1$C, "pois")
+plot(fit.pois2)
+
+# For D
+fit.pois<-fitdist(df1$D, "pois")
+plot(fit.pois)
+
+# For E
+fit.unif<-fitdist(df1$E, "unif")
+plot(fit.unif)
+```
+
+
+### What are the summary statistics?
+Below are the summary statistics with the graphs:
+```{r data distributed}
+# internal structure 
+str(df1)
+
+# This is a summary of the data:
+summary(df1)
+
+# Melt the data requires reshape2
+rnd <- melt(data = df1)
+
+# Review the data to make sure it looks ok
+summary(rnd)
+
+# Plot the data:
+ggplot(rnd, aes(x = value)) + geom_density(aes(
+  group = variable,
+  color = variable,
+  fill = variable
+)) + labs(title = "M01_Lesson_02_Q1.csv Data", y = "??,sigma^2(X)", x =
+            " successes")
+
+# The data looks hard to read, so I am going to separate A-D and E.
+# This is A-D:
+df2 <- data.frame(
+  A = df1$A,
+  B = df1$B,
+  C = df1$C,
+  D = df1$D
+)
+rnd2 <- melt(data = df2)
+summary(rnd2)
+
+ggplot(rnd2, aes(x = value)) + geom_density(aes(
+  group = variable,
+  color = variable,
+  fill = variable
+)) + labs(title = "M01_Lesson_02_Q1.csv Data for A - D", y = "??,sigma^2(X)", x =
+            " successes")
+
+# This is E:
+df3 <- data.frame(E = df1$E)
+rnd3 <- melt(data = df3)
+summary(rnd3)
+
+ggplot(rnd3, aes(x = value)) + geom_density(aes(
+  group = variable,
+  color = variable,
+  fill = variable
+)) + labs(title = "M01_Lesson_02_Q1.csv Data for E", y = "??,sigma^2(X)", x =
+            " successes")
+
+```
+
+### Are there anomalies/outliers?
+I had a hard time trying to understand if C and D were possion or binomial distributed, other than that I do not think there are any anomalies and the data looks good.
+
+### Try to regenerate the data in each column and plot your regenerated data versus the original data using a faceted graph. How does it compare?
+Below is regeneration of the data using R:
+```{r data distributed regenerate}
+n = 333
+norm_dist <- data.frame(
+  regenerateA = rnorm(n = n, mean = mean(df1$A), sd = sd(df1$A)),
+  regenerateB = rnorm(n = n, mean = mean(df1$B), sd = sd(df1$B)),
+  regenerateC = rpois(n = n, lambda = mean(df1$C)), 
+  regenerateD = rpois(n = n, lambda = mean(df1$D)),
+  regenerateE = runif(n, min(df1$E), max(df1$E)+1)
+)
+
+summary(norm_dist)
+head(norm_dist)
+
+# Melt the data
+rndReg <- melt(data = norm_dist)
+
+# Review the data to make sure it looks ok
+summary(rndReg)
+
+# Plot the data:
+ggplot(rndReg, aes(x = value)) + geom_density(aes(
+  group = variable,
+  color = variable,
+  fill = variable
+)) + labs(title = "Regenerate Data", y = "??,sigma^2(X)", x =
+            " successes")
+```
+
+Comparing the data one to one, it looks like it matches well.  However, I had a hard time getting C to match up, it looks like it could be in the ballpark but it doesn't fit as well as the others:
+```{r data distributed analysis A}
+distA <- data.frame(A = df1$A, regenerateA = norm_dist$regenerateA)
+distA <- melt(data = distA)
+ggplot(distA, aes(x = value)) + geom_density(aes(
+  group = variable,
+  color = variable
+)) + labs(title = "A vs regenerateA", y = "??,sigma^2(X)", x =
+            " successes")
+```
+
+```{r data distributed analysis B}
+distB <- data.frame(B = df1$B, regenerateB = norm_dist$regenerateB)
+distB <- melt(data = distB)
+ggplot(distB, aes(x = value)) + geom_density(aes(
+  group = variable,
+  color = variable
+)) + labs(title = "B vs regenerateB", y = "??,sigma^2(X)", x =
+            " successes")
+```
+
+```{r data distributed analysis C}
+distC <- data.frame(C = df1$C, regenerateC = norm_dist$regenerateC)
+distC <- melt(data = distC)
+ggplot(distC, aes(x = value)) + geom_density(aes(
+  group = variable,
+  color = variable
+)) + labs(title = "C vs regenerateC", y = "??,sigma^2(X)", x =
+            " successes")
+```
+
+```{r data distributed analysis D}
+distD <- data.frame(D = df1$D, regenerateD = norm_dist$regenerateD)
+distD <- melt(data = distD)
+ggplot(distD, aes(x = value)) + geom_density(aes(
+  group = variable,
+  color = variable
+)) + labs(title = "D vs regenerateD", y = "??,sigma^2(X)", x =
+            " successes")
+```
+
+```{r data distributed analysis E}
+distE <- data.frame(E = df1$E, regenerateE = norm_dist$regenerateE)
+distE <- melt(data = distE)
+ggplot(distE, aes(x = value)) + geom_density(aes(
+  group = variable,
+  color = variable
+)) + labs(title = "M01_Lesson_02_Q1.csv Data for E", y = "??,sigma^2(X)", x =
+            " successes")
+```

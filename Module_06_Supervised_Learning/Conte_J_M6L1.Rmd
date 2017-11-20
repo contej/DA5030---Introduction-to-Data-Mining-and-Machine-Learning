@@ -1,0 +1,240 @@
+---
+title: "M6L1 Homework Assignment"
+author: "Joshua Conte"
+date: "October 29, 2017"
+output: 
+  pdf_document:
+    fig_caption: true
+    latex_engine: xelatex
+header-includes:
+    - \usepackage{fancyhdr}
+    - \pagestyle{fancy}
+    - \fancyhead[CO,CE]{DA5030}
+    - \fancyfoot[CO,CE]{Assignment M6L1 by Joshua Conte}
+    - \fancyfoot[LE,RO]{\thepage}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+&nbsp;
+
+
+\clearpage
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{5}
+\pagebreak
+
+# M6L1 Homework Assignment
+R studio was configured with the following parameters before beginning the project:
+```{r Configure RStudio, warning = FALSE, message = FALSE}
+# clears the console in RStudio
+cat("\014") 
+
+# clears environment
+rm(list = ls())  
+
+# Load required packages
+require(ggplot2)
+require(class)
+```
+
+## Load Data.   
+I opened the [Wholesale customers Data Set](https://archive.ics.uci.edu/ml/datasets/Wholesale+customers) using read.csv2 and downloaded it directly from the UC Irvine Machine Learning Repository. 
+
+To format the data, the data is separated by ',', stringsAsFactors = FALSE so that the strings in a data frame will be treated as plain strings and not as factor variables. I set na strings for missing data. Once the data was loaded I added the column names and changed the data types to numeric and finally removed the text data type.
+
+Below is my R code:
+```{r open and format the dataset}
+# Some csv files are really big and take a while to open.  This command checks to
+# see if it is already opened, if it is, it does not open it again.
+# I also omitted the first column
+if (!exists("dfWCD")) {
+dfWCD <-
+  read.csv2("Wholesale customers data.csv",
+    sep = ",",
+    stringsAsFactors = FALSE,
+    na.strings=c("","NA")
+  )
+}
+
+# Download directly from site (unreliable from Ecuador)
+# if (!exists("dfWCD")) {
+# dfWCD <-
+#   read.csv2(
+#     url(
+#       "https://archive.ics.uci.edu/ml/machine-learning-databases/00292/Wholesale customers data.csv"
+#     ),
+#     sep = ",",
+#     stringsAsFactors = FALSE,
+#     na.strings=c("","NA")
+#   )
+# # Add a column so I know which study the data is referring to
+# study <- sprintf("study_%s",seq(1:440))
+# dfWCD$study<-study
+# }
+
+# change 2 to 24 to numeric
+dfWCD[1:8] <- sapply(dfWCD[1:8], as.numeric)
+
+# Print first lines
+str(dfWCD)
+```
+
+###Understanding the data
+The data set refers to clients of a wholesale distributor in Portugal. It includes the annual spending in monetary units (m.u.) on diverse product categories. The data has the following attribute information:
+
+1. FRESH: annual spending (m.u.) on fresh products (Continuous); 
+2. MILK: annual spending (m.u.) on milk products (Continuous); 
+3. GROCERY: annual spending (m.u.)on grocery products (Continuous); 
+4. FROZEN: annual spending (m.u.)on frozen products (Continuous) 
+5. DETERGENTS_PAPER: annual spending (m.u.) on detergents and paper products (Continuous) 
+6. DELICATESSEN: annual spending (m.u.)on and delicatessen products (Continuous); 
+7. CHANNEL: customer channel - 1 = Horeca (Hotel/Restaurant/Cafe) or 2 = Retail 
+8. REGION: Customers Region - 1= Lisnon 2 = Oporto or 3 = Other (Nominal)
+
+## k-Nearest Neighbors (kNN) in R
+A simple supervised learning algorithm is k-Nearest Neighbors algorithm (k-NN). KNN is a non-parametric method used for classification and regression.
+
+In both cases, the input consists of the k closest training examples in the feature space. The output depends on whether k-NN is used for classification or regression:
+
+In k-NN classification, the output is a class membership. An object is classified by a majority vote of its neighbors, with the object being assigned to the class most common among its k nearest neighbors (k is a positive integer, typically small). If k = 1, then the object is simply assigned to the class of that single nearest neighbor.
+
+I am using the Channel data for classification:
+```{r looking at the dataset}
+head(dfWCD)
+summary(dfWCD)
+length(dfWCD)
+names(dfWCD)
+table(dfWCD$Channel)
+dfWCD$Channel
+length(dfWCD$Channel)
+```
+
+In this section I shuffle the data to make it a little more random to make sure the training set and predictive set have a good random sample, I don't want to train on all 1's to predict for the 2's:
+```{r shuffle the data}
+shuff<-runif(nrow(dfWCD))
+head(shuff)
+shopping<-dfWCD[order(shuff),]
+shopping$Channel
+```
+
+This looks at the plotting to see if the knn will do a good job. Here I plot Detergents_Paper vs Milk and Detergents_Paper vs Fresh:
+```{r}
+qplot(shopping$Detergents_Paper,shopping$Milk,data=shopping)+geom_point(aes(colour = factor(shopping$Channel),shape = factor(shopping$Channel)))
+qplot(shopping$Detergents_Paper,shopping$Fresh,data=shopping)+geom_point(aes(colour = factor(shopping$Channel),shape = factor(shopping$Channel)))
+summary(shopping)
+```
+This algorithm should do a good job since the data is not mixed, the plots look separated.
+
+Here I grab the data that can be analyzed, I no longer need Channel or Regions, and I scale the data to make it all on a comparable scale.
+```{r}
+shopping.scaled<-as.data.frame(lapply(shopping[,c(3:8)], scale))
+head(shopping.scaled)
+summary(shopping.scaled)
+```
+
+This also scales the data like above and puts all of it on a scale from 0 to 1.
+```{r}
+normalize<- function(x) {
+  return((x-min(x))/(max(x)-min(x)))
+}
+shopping.normalized<-as.data.frame(lapply(shopping[,c(3:8)],normalize))
+head(shopping.normalized)
+summary(shopping.normalized)
+nrow(shopping)
+```
+
+This takes the normalized data and trains the first 390 to predict the remaining 50, with a k=4:
+```{r k=4}
+shopping.normalized.train<-shopping.normalized[1:390,]
+shopping.normalized.test<-shopping.normalized[391:440,]
+shopping.normalized.train.target<-shopping[1:390,c(1)]
+shopping.normalized.test.target<-shopping[391:440,c(1)]
+shopping.normalized.test.target
+k<-4
+knn.m1.4<-knn(train = shopping.normalized.train, test = shopping.normalized.test,shopping.normalized.train.target,k)
+knn.m1.4
+length(knn.m1.4)
+cm<-table(shopping.normalized.test.target,knn.m1.4)
+cm
+```
+The results look like 3 out of 33 were mislabeled as Channel 2 instead of Channel 1 (9.09% error) and 0 out of 17 were mislabeled as Channel 1 instead of Channel 2 (0% error). Overall, I think it did a good job.
+
+### Using different k's
+This uses k=2:
+```{r k=2}
+k<-2
+knn.m1.2<-knn(train = shopping.normalized.train, test = shopping.normalized.test,shopping.normalized.train.target,k)
+cm<-table(shopping.normalized.test.target,knn.m1.2)
+cm
+```
+Using k = 2 gives a great result of 1 out of 33 were mislabeled as Channel 2 instead of Channel 1 (3.03% error) and 0 out of 17 were mislabeled as Channel 1 instead of Channel 2 (0% error).
+
+This uses k=3:
+```{r k=3}
+k<-3
+knn.m1.3<-knn(train = shopping.normalized.train, test = shopping.normalized.test,shopping.normalized.train.target,k)
+cm<-table(shopping.normalized.test.target,knn.m1.3)
+cm
+```
+Using k = 3 gives a great result of 2 out of 33 were mislabeled as Channel 2 instead of Channel 1 (6.06% error) and 0 out of 17 were mislabeled as Channel 1 instead of Channel 2 (0% error).
+
+This uses k=5:
+```{r k=5}
+k<-5
+knn.m1.5<-knn(train = shopping.normalized.train, test = shopping.normalized.test,shopping.normalized.train.target,k)
+cm<-table(shopping.normalized.test.target,knn.m1.5)
+cm
+```
+Using k = 5 gives the same result as k = 4.
+
+This uses k=6:
+```{r k=6}
+k<-6
+knn.m1.6<-knn(train = shopping.normalized.train, test = shopping.normalized.test,shopping.normalized.train.target,k)
+cm<-table(shopping.normalized.test.target,knn.m1.6)
+cm
+```
+Using k = 6 gives the same result as k = 4.
+
+This uses k=7:
+```{r k=7}
+k<-7
+knn.m1.7<-knn(train = shopping.normalized.train, test = shopping.normalized.test,shopping.normalized.train.target,k)
+cm<-table(shopping.normalized.test.target,knn.m1.7)
+cm
+```
+Using k = 7 gives the same result as k = 3.
+
+This uses k=8:
+```{r k=8}
+k<-8
+knn.m1.8<-knn(train = shopping.normalized.train, test = shopping.normalized.test,shopping.normalized.train.target,k)
+cm<-table(shopping.normalized.test.target,knn.m1.8)
+cm
+```
+Using k = 8 gives the same result as k = 3.
+
+### Using the original data
+Does scaling, normalization or leaving the data unscaled make a difference for kNN?
+```{r original}
+shopping.train<-shopping[1:390,]
+shopping.test<-shopping[391:440,]
+shopping.train.target<-shopping[1:390,c(1)]
+shopping.test.target<-shopping[391:440,c(1)]
+shopping.test.target
+k<-3
+knn.m1.4<-knn(train = shopping.train, test = shopping.test,shopping.train.target,k)
+knn.m1.4
+length(knn.m1.4)
+cm<-table(shopping.test.target,knn.m1.4)
+cm
+```
+No, because the data was already to scale.
+
+##Questions
+1. Does the k for kNN make a difference? Try for a range of values of k. 
+    - Yes, the k value makes a difference. I ran KNN with a k value from 2 through 8, 2 was the best followed by 3. A k value of 4, 5, and 6 gave the worst and a k value of 7 and 8 were the same of a k value of 3.
+2. Does scaling, normalization or leaving the data unscaled make a difference for kNN? Why or Why not?
+    - For this dataset it does not matter because all of the data used were at a similar scale. If I used a different dataset that had mixed data at different scales, like the wine data used in the class lecture, it would make a difference. This is because distance metrics that are not scale invariant, attributes with larger absolute ranges will dominate. 

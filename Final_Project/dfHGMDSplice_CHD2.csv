@@ -1,0 +1,5 @@
+"HGMDaccession","HGMD.splicing.mutation","Consequence","Variantclass","Reported.phenotype","Reference","Extrainformation"
+NA,"IVS3 as C-T +9","c.390C>T","DM?","Lennox-Gastaut syndrome","Appenzeller (2014) Am J Hum Genet 95, 360","hg38  hg19 COM CpG"
+NA,"IVS12 ds G-A +1","c.1502+1G>A","DM","Lennox-Gastaut syndrome","Allen (2013) Nature 501, 217","hg38  hg19 COM  dbSNP"
+NA,"IVS13 ds G-A +5","c.1719+5G>A","DM","Epilepsy, photosensitive","Galizia (2015) Brain 138, 1198","hg38  hg19"
+NA,"IVS14 as A-C -2","c.1810-2A>C","DM","Dravet syndrome-like myoclonic epileptic encephalopathy","Suls (2013) Am J Hum Genet 93, 967","hg38  hg19   dbSNP"

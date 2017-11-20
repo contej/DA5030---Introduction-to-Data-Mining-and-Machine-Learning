@@ -1,0 +1,340 @@
+---
+title: "M1L3 Homework Assignment"
+author: "Joshua Conte"
+date: "September 17, 2017"
+output: 
+  pdf_document:
+    fig_caption: true
+header-includes:
+    - \usepackage{fancyhdr}
+    - \pagestyle{fancy}
+    - \fancyhead[CO,CE]{DA5030}
+    - \fancyfoot[CO,CE]{Assignment M1L3 by Joshua Conte}
+    - \fancyfoot[LE,RO]{\thepage}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+&nbsp;
+
+
+\clearpage
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{5}
+\pagebreak
+
+# M1L3 Homework Assignment
+R studio was configured with the following parameters before beginning the project:
+```{r Configure RStudio, warning = FALSE, message = FALSE}
+# clears the console in RStudio
+cat("\014") 
+
+# clears environment
+rm(list = ls())  
+
+# Set working directory
+setwd("C:/R/DA5030/module_01")
+
+# Load required packages
+require(ggplot2)
+require(fitdistrplus)
+library(knitr) # Used for making tables in this report
+```
+
+## load the file M01_Lesson_02_Q1.csv.   
+I opened the data using read.csv2 and changed the data from integer to numeric so I could analyze it with R.
+
+Below is my R code:
+```{r open csv file}
+# Some VCF files are really big and take a while to open.  This command checks to
+# see if it is already opened, if it is, it does not open it again.
+# I also omitted the first column
+if (!exists("df1")) {
+  df1 <-
+    read.csv2(
+      'M01_quasi_twitter.csv ',
+      sep = ",",
+      stringsAsFactors = FALSE,
+      row.names = NULL,
+      header = TRUE
+    )
+}
+
+# Check to make sure the data is in numeric form for analysis:
+sapply(df1, class)
+
+# change int to numeric
+df1[2:4] <- sapply(df1[2:4], as.numeric)
+df1[7:14] <- sapply(df1[7:14], as.numeric)
+df1[16:20] <- sapply(df1[16:20], as.numeric)
+df1[22:25] <- sapply(df1[22:25], as.numeric)
+
+# Confirm changes
+sapply(df1, class)
+```
+
+## How is the data distributed?
+I ran fitdistrplus on all numeric data and printed out Cullen and Frey graphs to get an idea of how the data is distributed.  
+
+Most of the data appears to be not normal and un-uniform.  created_at_month, created_at_day, created_at_year, dob_day appear to be uniform and education is normal. Everything else appears to be bad and will require additional analysis.
+
+However, if some of the outliers were removed, the data could be normal or uniform. For example, age, there are a lot of people that are listed as 0, this is impossible, if this anomaly was removed, the data would be normal.
+
+Please refer to the plots below:
+```{r data distributed analysis 1}
+# created_at_month
+descdist(df1$created_at_month, discrete = FALSE)
+
+# created_at_day
+descdist(df1$created_at_day, discrete = FALSE)
+
+# created_at_year
+descdist(df1$created_at_year, discrete = FALSE)
+
+# friends_count
+descdist(df1$friends_count, discrete = FALSE)
+
+# followers_count
+descdist(df1$followers_count, discrete = FALSE)
+
+# statuses_count
+descdist(df1$statuses_count, discrete = FALSE)
+
+# favourites_count
+descdist(df1$favourites_count, discrete = FALSE)
+
+# favourited_count
+descdist(df1$favourited_count, discrete = FALSE)
+
+# dob_day
+descdist(df1$dob_day, discrete = FALSE)
+
+# dob_year
+descdist(df1$dob_year, discrete = FALSE)
+
+# dob_month
+descdist(df1$dob_month, discrete = FALSE)
+
+# mobile_favourites_count
+descdist(df1$mobile_favourites_count, discrete = FALSE)
+
+# mobile_favourited_count
+descdist(df1$mobile_favourited_count, discrete = FALSE)
+
+# education
+descdist(df1$education, discrete = FALSE)
+
+# experience
+descdist(df1$experience, discrete = FALSE)
+
+# age
+descdist(df1$age, discrete = FALSE)
+
+# wage
+descdist(df1$wage, discrete = FALSE)
+
+# retweeted_count
+descdist(df1$retweeted_count, discrete = FALSE)
+
+# retweet_count
+descdist(df1$retweet_count, discrete = FALSE)
+
+# height
+descdist(df1$height, discrete = FALSE)
+
+
+```
+
+
+
+## Testing distribution assumptions
+What happens when you test distribution assumptions (e.g. normal distributions or skewed, etc.)?
+
+I ran fitdist plots for the normal data (education) and it looks good. However, when I ran the data that should have been uniform, it does not look very uniform (see created month and year).
+
+I ran age and it looked like it could be normal if there wasn't a lot of people that were zero.
+
+I also tried to run other plots, but I could not find a good match for the data (Poisson, binomial, beta,...etc.)
+
+```{r data distributed analysis 2}
+# Normal Distribution: education
+fit.norm<-fitdist(df1$education, "norm")
+plot(fit.norm)
+
+# Uniform Distribution: created_at_month
+fit.unif<-fitdist(df1$created_at_month, "unif")
+plot(fit.unif)
+
+# Uniform Distribution: created_at_year
+fit.unif2<-fitdist(df1$created_at_year, "unif")
+plot(fit.unif2)
+
+# Uniform Distribution: created_at_year
+fit.norm2<-fitdist(df1$age, "norm")
+plot(fit.norm2)
+
+
+```
+
+
+## What are the summary statistics?
+Below are the summary information and first 6 rows of the data:
+```{r data summary statistics}
+# Check the summary of the data:
+summary(df1)
+
+# Look at the first 6 rows:
+head(df1)
+```
+
+## Are there anomalies/outliers?
+I do not see any anomalies (that fall into the constraints of insert, delete, or update), just outliers due to data quality problems. One big example is that the DOB year and age to not line up.  For example screen_name CNN has a dob_year of 1999 and an age of 29, this is not correct.  Age should be calculated from the birthdate and this should be updated in the database.  Other examples are listed below:
+
+Below in dob_day, it appears there are more people born on the 1st day of the first month. This is probably because people do not put their correct birthday in.  There is also an error in the data too, 1970 and 1992 should be NA.
+```{r data anomalies and outliers}
+qplot(
+  x = dob_day,
+  data = df1,
+  bins = 30,
+  color = I('#17331F'),
+  fill = I('#CC0000')
+) + facet_wrap( ~ dob_month) # a grid on one extra variable
+```
+
+In the dob_year data, there appears to be a lot of people born around 1900, again, this is due to people not entering the correct information.
+```{r data anomalies and outliers 2}
+qplot(
+  x = dob_year,
+  data = df1,
+  bins = 30,
+  color = I('#17331F'),
+  fill = I('#CC0000')
+)
+```
+
+Age data has some negatives and a lot of zeros which is impossible.  This information was probably entered incorrectly.
+```{r data anomalies and outliers 3}
+qplot(
+  x = age,
+  data = df1,
+  bins = 30,
+  color = I('#17331F'),
+  fill = I('#CC0000')
+)
+```
+
+The experience data has negative information which is also impossible.
+```{r data anomalies and outliers 4}
+qplot(
+  x = experience,
+  data = df1,
+  bins = 30,
+  color = I('#17331F'),
+  fill = I('#CC0000')
+)
+```
+
+I would expect gender data to be uniform, however, there are about twice as many males in this data.
+```{r data anomalies and outliers 5}
+qplot(
+  x = gender,
+  data = df1,
+  color = I('#17331F'),
+  fill = I('#CC0000')
+)
+```
+
+## Can you identify the following:
+
+### useful raw data and transforms (e.g. log(x))
+The followers count is a good example of this.  The data should be good, but when it is plotted it looks like everyone has zero followers.  This is because a lot of people have very little to zero follows and a very small amount of people have millions of follows, this makes the data difficult to graph:
+
+```{r data useful raw data and transforms, warning = FALSE}
+qplot(
+  x = followers_count,
+  data = df1,
+  bins = 30,
+  color = I('#17331F'),
+  fill = I('#CC0000')
+)
+```
+
+To fix this issue we can apply a Fat-tailed Log-transform:
+```{r data useful raw data and transforms 2, warning = FALSE}
+qplot(
+  x = log(followers_count + 1, 2),
+  data = df1,
+  bins = 30,
+  color = I('#17331F'),
+  fill = I('#CC0000')
+)
+```
+
+We could also zoom in on the info too:
+```{r data useful raw data and transforms 3, warning = FALSE}
+qplot(
+  x = followers_count,
+  data = df1,
+  bins = 30,
+  xlim = c(0, 10000),
+  color = I('#17331F'),
+  fill = I('#CC0000')
+)
+```
+
+This can also be applied to the friends count too:
+```{r data useful raw data and transforms 4, warning = FALSE}
+qplot(
+  x = friends_count,
+  data = df1,
+  bins = 30,
+  color = I('#17331F'),
+  fill = I('#CC0000')
+)
+qplot(
+  x = log(friends_count + 1, 2),
+  data = df1,
+  bins = 30,
+  color = I('#17331F'),
+  fill = I('#CC0000')
+)
+qplot(
+  x = friends_count,
+  data = df1,
+  bins = 30,
+  xlim = c(0, 10000),
+  color = I('#17331F'),
+  fill = I('#CC0000')
+)
+```
+
+### data quality problems
+I showed many examples of data quality problems in section 1.5, "Are there anomalies/outliers". These were all examples of inaccurate customer data.  Birthdays are inaccurate, age is inaccurate, experience is inaccurate, and arguably anything that is dependent on the customer input has quality problems.
+
+### outliers
+An outlier is an observation that lies an abnormal distance from other values in a random sample from a population. The outliers that I found were consistent with the data quality issues as described above.
+
+### subsets of interest
+I think it is interesting to look at subsets of gender and education.
+
+Below is a subset of followers count and favourited counted by gender:
+```{r data subsets of interest, warning = FALSE}
+qplot(followers_count, favourited_count, data=df1, facets = ~ gender) 
+```
+
+This is an example of education level and retweer count by gender.
+```{r data subsets of interest 2, warning = FALSE}
+qplot(education, retweet_count, data=df1, facets = ~ gender) 
+```
+
+## Finally, suggest any functional relationships.
+It is hard to find functional relationships with this data.  I did see a trend with followers count and favourited counted as shown below: 
+```{r data functional relationships, warning = FALSE}
+qplot(followers_count, favourited_count, data=df1) + geom_point(shape=4) + geom_smooth() 
+```
+
+I thought it would be interesting to see it broken down by gender and this is the result:
+```{r data functional relationships 2, warning = FALSE}
+qplot(followers_count, favourited_count, data=df1,colour=gender) + geom_point(shape=4) + geom_smooth()
+```

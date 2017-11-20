@@ -1,0 +1,195 @@
+---
+title: "M7L3 Homework Assignment"
+author: "Joshua Conte"
+date: "November 12, 2017"
+output: 
+  pdf_document:
+    fig_caption: true
+header-includes:
+    - \usepackage{fancyhdr}
+    - \pagestyle{fancy}
+    - \fancyhead[CO,CE]{DA5030}
+    - \fancyfoot[CO,CE]{Assignment M7L3 by Joshua Conte}
+    - \fancyfoot[LE,RO]{\thepage}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+&nbsp;
+
+
+\clearpage
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{5}
+\pagebreak
+
+# M7L3 Homework Assignment
+R studio was configured with the following parameters before beginning the project:
+```{r Configure RStudio, warning = FALSE, message = FALSE}
+# clears the console in RStudio
+cat("\014") 
+
+# clears environment
+rm(list = ls())  
+
+# Load required packages
+library(RTextTools)
+library(tm)
+library(wordcloud)
+library(SnowballC)
+library(stringr)
+library(ggplot2)
+library(cluster)
+library(amap)
+library(useful)
+library(qdap)
+
+```
+
+## Load the file ML.Tweets.csv 
+(it is online at 'http://nikbearbrown.com/YouTube/MachineLearning/Twitter/')
+```{r}
+# With a fast internet connection
+# data_url <- 'http://nikbearbrown.com/YouTube/MachineLearning/Twitter/ML.Tweets.csv'
+# twitter <- read.csv(url(data_url))
+
+# Load file from directory
+if (!exists("twitter")) {
+twitter <-
+  read.csv2("ML.Tweets.csv",
+    sep = ",",
+    stringsAsFactors = FALSE,
+    header = FALSE,
+    blank.lines.skip = TRUE,
+    na.strings=c("","NA")
+  )
+}
+```
+Complete the following:
+
+###Extract and rank a list of the important hashtags (using td-idf or word entropy).
+This was a difficult assignment, the algorithms I used could not handle a lot of data. To get around this I had to use the first 50,000 lines of the CSV file, otherwise R would timeout and give me a memory error. I am not sure if it is the program or my computer, but I do have 16 GB of RAM.
+
+Below is my code:
+```{r}
+# get the first 500,000 lines of the file
+hashLines<-twitter$V3[1:50000]
+hashLines<-hashLines[!is.na(hashLines)]
+
+# First I use str_extract_all and put all hashtags in a list for V1,V2, and V3
+hashList<-str_extract_all(hashLines, "#\\S+")
+
+# I  change the list to a vector
+hashTag<-unlist(hashList, use.names=FALSE)
+
+tweets.corpus <- Corpus(DataframeSource(data.frame(hashTag)))
+
+# Eliminating Extra Whitespace
+tweets.clean<-tm_map(tweets.corpus, stripWhitespace)
+
+# Convert to Lower Case
+tweets.clean.lc <- tm_map(tweets.clean, content_transformer(tolower))
+
+# Remove Stopwords
+tweets.clean <- tm_map(tweets.clean.lc, removeWords, stopwords("english"))
+
+# Building a Document-Term Matrix
+tweets.tdm <- TermDocumentMatrix(tweets.clean, control = list(minWordLength = 1))
+tweets.tdm
+
+# inspect most popular words
+findFreqTerms(tweets.tdm, lowfreq=80)
+```
+
+###Cluster the tweets using these hashtags.
+This works with the tdm file created above:
+```{R}
+# convert the sparse term-document matrix to a standard data frame
+dfTweets <- as.data.frame(inspect(tweets.tdm))
+ 
+# inspect dimensions of the data frame
+nrow(dfTweets)
+ncol(dfTweets)
+
+# Determining number of clusters 
+sos <- (nrow(dfTweets) - 1) * sum(apply(dfTweets, 2, var))
+for (i in 2:3)
+  sos[i] <- sum(kmeans(dfTweets, centers = i)$withinss)
+plot(1:3,
+     sos,
+     type = "b",
+     xlab = "Number of Clusters",
+     ylab = "sum of squares")
+plot(2:3,
+     sos[c(2:3)],
+     type = "b",
+     xlab = "Number of Clusters",
+     ylab = "sum of squares")
+
+# Hartigans's rule FitKMean (similarity) 
+# require(useful) 
+best<-FitKMeans(dfTweets,max.clusters=3, seed=111) 
+PlotHartigan(best)
+
+k <- 2
+trails<-1000
+dfTweets.2.cluster <- kmeans(dfTweets,k, nstart = trails)
+dfTweets.2.cluster
+
+plot(dfTweets,col=dfTweets.2.cluster$cluster)     # Plot Clusters
+
+dfTweets.scale <- scale(dfTweets)
+d <- dist(dfTweets.scale, method = "euclidean") # distance matrix
+fit <- hclust(d, method="ward.D")
+plot(fit) # display dendogram?
+ 
+groups <- cutree(fit, k=5) # cut tree into 5 clusters
+# draw dendogram with red borders around the 5 clusters
+rect.hclust(fit, k=5, border="red")
+```
+
+
+###Use the qdap polarity function to score the polarity of the tweets in ML.Tweets.csv.
+
+This is from an example I found from:
+http://michaellevy.name/blog/conference-twitter/
+
+This takes the polarity of the tweets after a little reformating:
+```{R, warning = FALSE}
+pol = 
+    lapply(hashLines, function(txt) {
+        # strip sentence enders so each tweet is analyzed as a sentence,
+        # and +'s which muck up regex
+        gsub('(\\.|!|\\?)\\s+|(\\++)', ' ', txt) %>%
+            # strip URLs
+            gsub(' http[^[:blank:]]+', '', .) %>%
+            # calculate polarity
+            polarity()
+    })
+
+head(pol)
+```
+
+###Would creating a custom polarity.frame - A dataframe or environment containing a dataframe of positive/negative words and weights - based on the tags and words in these tweets improve the polarity score? Try it.
+This is using qdap's polarity function straight out of the box to examine the emotional valence of each tweet.  The frequency of usage in the conference tweets of words that qdap identifies as positively or negatively valenced.
+```{R}
+
+polWordTables = 
+  sapply(pol, function(p) {
+    words = c(positiveWords = paste(p[[1]]$pos.words[[1]], collapse = ' '), 
+              negativeWords = paste(p[[1]]$neg.words[[1]], collapse = ' '))
+    gsub('-', '', words)  # Get rid of nothing found's "-"
+  }) %>%
+  apply(1, paste, collapse = ' ') %>% 
+  stripWhitespace() %>% 
+  strsplit(' ') %>%
+  sapply(table)
+
+par(mfrow = c(1, 2))
+invisible(
+  lapply(1:2, function(i) {
+    dotchart(sort(polWordTables[[i]]), cex = .8)
+    mtext(names(polWordTables)[i])
+  }))
+```

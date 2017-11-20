@@ -1,0 +1,5 @@
+"HGMDaccession","HGMD.insertion","Consequence","Variantclass","Reported.phenotype","Reference","Extrainformation"
+NA,"GAGTGG^1262GGGGgTGGAAGATGA","c.3787dupG","DM?","Moderate intellectual disability, seizures and speech delay","Bowling (2017) Genome Med 9,","hg38  hg19 COM"
+NA,"GAAAAAA^1391AAAaCAGAAGAAGA","c.4173dupA","DM","Lennox-Gastaut syndrome","Lund (2014) Epilepsy Behav 33C, 18Galizia (2015) Brain 138: 1198 [Additional phenotype]Pinto (2016) Brain Dev :  [Additional phenotype]","hg38  hg19"
+NA,"ACTAT^1649GGTGGgTGGCAACAAC","c.4949dupG","DM?","Autism","O'Roak (2014) Nat Commun 5, 5595","hg38  hg19"
+NA,"CAGAAAG^1698AGGgCCTTATGACC","c.5094dupG","DM","Intellectual disability","Gauthier-Vasserot (2017) Am J Med Genet A 173, 62","hg38  hg19 COM"

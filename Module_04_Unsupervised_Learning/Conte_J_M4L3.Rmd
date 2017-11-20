@@ -1,0 +1,231 @@
+---
+title: "M4L3 Homework Assignment"
+author: "Joshua Conte"
+date: "October 15, 2017"
+output: 
+  pdf_document:
+    fig_caption: true
+    latex_engine: xelatex
+header-includes:
+    - \usepackage{fancyhdr}
+    - \pagestyle{fancy}
+    - \fancyhead[CO,CE]{DA5030}
+    - \fancyfoot[CO,CE]{Assignment M4L3 by Joshua Conte}
+    - \fancyfoot[LE,RO]{\thepage}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+&nbsp;
+
+
+\clearpage
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{5}
+\pagebreak
+
+# M4L3 Homework Assignment
+R studio was configured with the following parameters before beginning the project:
+```{r Configure RStudio, warning = FALSE, message = FALSE}
+# clears the console in RStudio
+cat("\014") 
+
+# clears environment
+rm(list = ls())  
+
+# Load required packages
+require(ggplot2)
+require(cluster)
+require(amap)
+require(useful)
+require(mclust)
+```
+
+## Load Data.   
+I opened the [Wholesale customers Data Set](https://archive.ics.uci.edu/ml/datasets/Wholesale+customers) using read.csv2 and downloaded it directly from the UC Irvine Machine Learning Repository. 
+
+To format the data, the data is separated by ',', stringsAsFactors = FALSE so that the strings in a data frame will be treated as plain strings and not as factor variables. I set na strings for missing data. Once the data was loaded I added the column names and changed the data types to numeric and finally removed the text data type.
+
+Below is my R code:
+```{r open and format the dataset}
+# Some csv files are really big and take a while to open.  This command checks to
+# see if it is already opened, if it is, it does not open it again.
+# I also omitted the first column
+if (!exists("dfWCD")) {
+dfWCD <-
+  read.csv2("Wholesale customers data.csv",
+    sep = ",",
+    stringsAsFactors = FALSE,
+    na.strings=c("","NA")
+  )
+# Add a column so I know which study the data is refereing to
+study <- sprintf("study_%s",seq(1:440))
+dfWCD$study<-study
+}
+
+# Download directly from site (unreliable from Ecuador)
+# if (!exists("dfWCD")) {
+# dfWCD <-
+#   read.csv2(
+#     url(
+#       "https://archive.ics.uci.edu/ml/machine-learning-databases/00292/Wholesale customers data.csv"
+#     ),
+#     sep = ",",
+#     stringsAsFactors = FALSE,
+#     na.strings=c("","NA")
+#   )
+# # Add a column so I know which study the data is refereing to
+# study <- sprintf("study_%s",seq(1:440))
+# dfWCD$study<-study
+# }
+
+# change 2 to 24 to numeric
+dfWCD[1:8] <- sapply(dfWCD[1:8], as.numeric)
+
+# Print first lines
+str(dfWCD)
+
+# Select the first 8 lines for plotting
+dfWCD2<-dfWCD[1:8]
+
+# Print first lines
+str(dfWCD2)
+```
+
+##Expectation-maximization (EM)
+The expectation-maximization (EM) algorithm is an iterative method for finding maximum likelihood or maximum a posteriori (MAP) estimates of parameters in statistical models, where the model depends on unobserved latent variables. Expectation Maximization (EM) is perhaps most often used algorithm for unsupervised learning.
+
+EM clustering probabilistically assigns data to different clusters. This is sometimes called "soft-clustering" (as oppossed to "hard-clustering" in which data only belongs to one cluster). 
+
+R has the Mclust function from the mclust library to provide the estimating the parameters in a statistical model using the EM algorthm.
+
+###Mclust Process
+Given a model (a mixture Guassians, Binomial, etc.), we have the following parameters:  
+
+* $X$: This is a set of observed data. (Doesn't change)
+* $Z$: This is a set of estimates for unobserved values
+* $T$: This is a set of unknown parameters for our model
+
+The expectation-maximization steps:  
+
+* Initialize the unknown parameters $T$ to random values.  
+* Compute the best fit for the missing values $Z$ using the existing parameter values.  
+* Use the best fit missing values $Z$ to generate a better estimate for the unknown parameters $T$ 
+
+Iterate until we have a convergence, usually when $Z$ and $T$ don't change much or after a fixed number of steps.
+
+###Mclust Example with Wholesale customers Data Set
+Note that the summary command with an mclust object generates:
+
+* log.likelihood: This is the log likelihood of the BIC value  
+* n: This is the number of X points
+* df: This is the degrees of freedom
+* BIC: This is the Bayesian information criteria; low is good
+* ICL: Integrated Complete X Likelihood-a classification version of the BIC. 
+
+This data has 2 outputs, channel and region. Below, I am going to use region as my output to analyze and remove both channel and region and cluster the remaining data.
+```{r}
+# I am going to use region
+region.d = dfWCD2$Region
+table(region.d)
+
+# I am going to remove region and channel from the data since they are not needed.
+X = dfWCD2[3:8]
+head(X)
+
+# Cluster Plot
+clPairs(X, region.d)
+
+# This fits the data
+fit <- Mclust(X)
+fit
+summary(fit)
+```
+The plot command for EM produces the following four plots:
+
+* The BIC values used for choosing the number of clusters  
+* A plot of the clustering  
+* A plot of the classification uncertainty  
+* The orbital plot of clusters  
+```{r}
+# 1: BIC
+plot(fit, what = "BIC")
+#table(class, fit$BIC)
+#2: classification
+plot(fit, what = "classification")
+#table(class, fit$classification)
+# 3: uncertainty
+plot(fit, what = "uncertainty")
+#table(class, fit$uncertainty)
+# 4: density
+plot(fit, what = "density")
+#table(class, fit$density)
+```
+The [mclustBIC](http://svitsrv25.epfl.ch/R-doc/library/mclust/html/mclustBIC.html) from mclust uses  BIC for EM initialized by model-based hierarchical clustering for parameterized Gaussian mixture models.
+```{r}
+BIC = mclustBIC(X)
+summary(BIC)
+plot(BIC) # Only BIC plot
+# plot(BIC,what = "BIC")
+# The following just get BIC plot: plot(BIC,what = "classification"), plot(BIC,what = "uncertainty"), plot(BIC,what = "density")
+```
+
+[mclustICL](http://finzi.psych.upenn.edu/R/library/mclust/html/mclustICL.html) from mclust uses ICL (Integrated Complete-data Likelihood) for parameterized Gaussian mixture models fitted by EM algorithm initialized by model-based hierarchical clustering.
+```{r}
+ICL = mclustICL(X)
+summary(ICL)
+plot(ICL)  # Only ICL plot
+```
+##M4L2 Analysis
+###K-means 
+This calculation makes the k-means calculation more stable, it performs this analysis 1000 times and takes the ones with the least error:
+```{r clustering analysis 2}
+# Clustering with 4 clusters
+k <- 8
+trails<-1000
+X.8.cluster <- kmeans(X,k, nstart = trails)
+X.8.cluster
+```
+
+These are the plots:
+```{r Plotting Clusters}
+plot(X,col=X.8.cluster$cluster)     # Plot Clusters
+
+# Centroid Plot against 1st two discriminant functions
+clusplot(X, X.8.cluster$cluster, color=TRUE, shade=TRUE, labels=2, lines=0)
+# library(fpc)
+# plotcluster(dfWCD2,dfWCD2.4.cluster$cluster)
+```
+###PAM
+PAM Analysis:
+```{r K-medoids clustering}
+# PAM
+k<-8
+X.pam.8.clust<- pam(X,k, keep.diss = TRUE, keep.data = TRUE)
+X.pam.8.clust
+plot(X,col=X.pam.8.clust$clustering)
+plot(X.pam.8.clust, which.plots = 2)
+# long lines good - means greater within cluster similarity
+
+# Centroid Plot against 1st two discriminant functions
+clusplot(X.pam.8.clust, color=TRUE, shade=TRUE, labels=2, lines=0)
+```
+
+###Hierarchical Clustering
+```{r Plotting to deterimine the cluster level}
+dfWCD2.h.clust<- hclust(d=dist(X))
+plot(dfWCD2.h.clust, labels = FALSE)
+rect.hclust(dfWCD2.h.clust, k=3, border="red")
+rect.hclust(dfWCD2.h.clust, k=6, border="green")
+rect.hclust(dfWCD2.h.clust, k=8, border="blue")
+```
+
+##Questions:
+**1. How did you choose a model for EM? Evaluate the model performance.**
+I used the same data from the previous assignment, Wholesale Customers Data Set. To format the data, I removed the text columns and the output columns.  The output data is channel and region. This left the data Fresh, Milk, Grocery, Frozen, Detergents_Paper, Delicassen to be analyzed. 
+
+The cluster plot (clPairs) doesn't appear to cluster very well. The green is overlapping everything in all of the plots, it doesn't seem too separated from the rest of the data. The Mclust plot ended up clustering in 8 different tables instead of 3, like I expected from the region data. The classification table looks acceptable, from what I can tell, the cylinders (probability distributions) are showing the clusters well. In the density plots, it appears there is more variance in the estimates because the density plots are so large.
+
+**2. Cluster some of your data using EM based clustering that you also used for k-means, PAM, and hierarchical clustering. How do the clustering approaches compare on the same data?**
+When I set the clusters to 8 and re-run the M4L2 clustering, the results look similar. The k-means, pam, and EM cluster plots look identical. However, I do not think this data clusters well. Looking at the clPairs plot, the green is overlapping everything and when I look at the hierarchical clustering plot, a majority of the data falls into one cluster, even when set to 8 clusters.

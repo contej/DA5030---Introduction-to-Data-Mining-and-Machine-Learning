@@ -1,0 +1,246 @@
+---
+title: "M6L2 Homework Assignment"
+author: "Joshua Conte"
+date: "October 29, 2017"
+output: 
+  pdf_document:
+    fig_caption: true
+    latex_engine: xelatex
+header-includes:
+    - \usepackage{fancyhdr}
+    - \pagestyle{fancy}
+    - \fancyhead[CO,CE]{DA5030}
+    - \fancyfoot[CO,CE]{Assignment M6L2 by Joshua Conte}
+    - \fancyfoot[LE,RO]{\thepage}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+&nbsp;
+
+
+\clearpage
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{5}
+\pagebreak
+
+# M6L2 Homework Assignment
+R studio was configured with the following parameters before beginning the project:
+```{r Configure RStudio, warning = FALSE, message = FALSE}
+# clears the console in RStudio
+cat("\014") 
+
+# clears environment
+rm(list = ls())  
+
+# Load required packages
+require("ggplot2");
+require("C50");
+require("gmodels");
+require("rpart");
+require("RColorBrewer");
+require("tree");
+require("party");
+```
+
+## Load Data.   
+I opened the [Wholesale customers Data Set](https://archive.ics.uci.edu/ml/datasets/Wholesale+customers) using read.csv2 and downloaded it directly from the UC Irvine Machine Learning Repository. 
+
+To format the data, the data is separated by ',', stringsAsFactors = FALSE so that the strings in a data frame will be treated as plain strings and not as factor variables. I set na strings for missing data. Once the data was loaded I added the column names and changed the data types to numeric and finally removed the text data type.
+
+Below is my R code:
+```{r open and format the dataset}
+# Some csv files are really big and take a while to open.  This command checks to
+# see if it is already opened, if it is, it does not open it again.
+# I also omitted the first column
+if (!exists("dfWCD")) {
+dfWCD <-
+  read.csv2("Wholesale customers data.csv",
+    sep = ",",
+    stringsAsFactors = FALSE,
+    na.strings=c("","NA")
+  )
+}
+
+# Download directly from site (unreliable from Ecuador)
+# if (!exists("dfWCD")) {
+# dfWCD <-
+#   read.csv2(
+#     url(
+#       "https://archive.ics.uci.edu/ml/machine-learning-databases/00292/Wholesale customers data.csv"
+#     ),
+#     sep = ",",
+#     stringsAsFactors = FALSE,
+#     na.strings=c("","NA")
+#   )
+# # Add a column so I know which study the data is referring to
+# study <- sprintf("study_%s",seq(1:440))
+# dfWCD$study<-study
+# }
+
+# change 2 to 24 to numeric
+dfWCD[1:8] <- sapply(dfWCD[1:8], as.numeric)
+
+# Print first lines
+str(dfWCD)
+```
+
+###Understanding the data
+The data set refers to clients of a wholesale distributor in Portugal. It includes the annual spending in monetary units (m.u.) on diverse product categories. The data has the following attribute information:
+
+1. FRESH: annual spending (m.u.) on fresh products (Continuous); 
+2. MILK: annual spending (m.u.) on Fresh products (Continuous); 
+3. GROCERY: annual spending (m.u.)on grocery products (Continuous); 
+4. FROZEN: annual spending (m.u.)on frozen products (Continuous) 
+5. DETERGENTS_PAPER: annual spending (m.u.) on detergents and paper products (Continuous) 
+6. DELICATESSEN: annual spending (m.u.)on and delicatessen products (Continuous); 
+7. CHANNEL: customer channel - 1 = Horeca (Hotel/Restaurant/Cafe) or 2 = Retail 
+8. REGION: Customers Region - 1= Lisnon 2 = Oporto or 3 = Other (Nominal)
+
+##Decision Trees in R 
+Top-down: Which attribute should ne the root?
+
+We construct a tree from the top down starting with the question: which attribute should be tested at the root of the tree? That is, which attribute best splits/separates the labeled training data.
+
+Then build subtrees recursively, asking the same question on the remaining attributes.
+
+This model will predict the customers Region.
+**Step 1 - Decision Trees:**
+```{r Step 1 Decision Trees}
+#####  Decision Trees  -------------------
+
+## Understanding Decision Trees ----
+# calculate entropy of a two-class segment
+
+
+curve(-x * log2(x) - (1 - x) * log2(1 - x),
+      col="red", xlab = "x", ylab = "Entropy", lwd=4)
+
+## Example: Identifying Mushroom Type: Either 'poisonous' or 'edible' ----
+```
+
+**Step 2 - Exploring and preparing the data:**
+This makes sure the data is random and uses the first 390 data points to train the last 50 data points.
+```{r Step 2 Exploring and preparing the data}
+str(dfWCD)
+
+# look at the class variable
+table(dfWCD$Channel)
+
+# create a random sample for training and test data
+set.seed(12345)
+dfWCD_rand <- dfWCD[order(runif(440)), ]
+
+# compare the original and random order data frames
+summary(dfWCD$Channel)
+summary(dfWCD_rand$Channel)
+
+head(dfWCD$Channel)
+head(dfWCD_rand$Channel)
+
+# split the data frames
+dfWCD_train <- dfWCD_rand[1:390, ]
+dfWCD_test  <- dfWCD_rand[391:440, ]
+
+# check the proportion of class variable
+prop.table(table(dfWCD_train$Region))
+prop.table(table(dfWCD_test$Region))
+```
+
+**Step 3 - Training a model on the data:**
+This uses the C5.0 algorithm:
+```{r Step 3 Training a model on the data}
+# First convert this to a factor
+dfWCD_train$Region<-as.factor(dfWCD_train$Region)
+model <- C5.0(dfWCD_train[-1], dfWCD_train$Region)
+
+# display simple facts about the tree
+model
+
+# display detailed information about the tree
+# This prints out a lot of lines of information that is not needed for the report.
+summary(model)
+```
+
+**Step 4 - Evaluating model performance:**
+This evaluates how well the training model did:
+```{r Step 4 Evaluating model performance}
+# create a factor vector of predictions(model) on test data
+
+dfWCD_Region_pred <- predict(model, dfWCD_test)
+
+# cross tabulation of predicted versus actual classes
+length(dfWCD_test$Region)
+
+CrossTable(dfWCD_test$Region, dfWCD_Region_pred,
+           prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+           dnn = c('actual Region', 'predicted Region'))
+
+
+
+formula<-Region  ~ Fresh + Milk + Grocery + Frozen + Detergents_Paper + Delicassen
+
+fit = rpart(formula, method="class", data=dfWCD_train)
+
+printcp(fit) # display the results
+plotcp(fit) # visualize cross-validation results
+summary(fit) # detailed summary of splits
+```
+The diagonals are good, what is predicted is what it actually is.
+
+**Step 5 - Growing the tree and plotting:**
+```{r Step 5 Growing the tree and plotting}
+###- Regression Tree Example
+
+# grow tree 
+fit <- rpart(formula, method="anova", data=dfWCD_train)
+
+printcp(fit) # display the results 
+plotcp(fit) # visualize cross-validation results 
+summary(fit) # detailed summary 
+
+# create additional plots 
+par(mfrow=c(1,2)) # two plots on one page 
+rsq.rpart(fit) # visualize cross-validation results    
+
+# plot tree 
+plot(fit, uniform=TRUE, 
+     main="Regression Tree for 'type' ")
+text(fit, use.n=TRUE, all=TRUE, cex=.8)
+
+
+### ----------------  plot tree
+
+plot(fit, uniform=T, main="Classification Tree for Customer Channels")
+text(fit, use.n=TRUE, all=TRUE, cex=.8)
+
+
+##----------------- TREE package
+
+tr = tree(formula, data=dfWCD_train)
+summary(tr)
+plot(tr); text(tr)
+
+
+##-------------------Party package
+
+
+ct = ctree(formula, data = dfWCD_train)
+plot(ct, main="Conditional Inference Tree")
+
+
+# Estimated class probabilities
+tr.pred = predict(ct, newdata=dfWCD_train, type="prob")
+
+#Table of prediction errors
+table(predict(ct), dfWCD_train$Channel)
+```
+
+##Questions
+1. Does the size of the data set make a difference?
+    - Yes, with more training data the predictive data will have better results with these algorithms. For the C4.5 (and C5.0) algorithms, the equation is: $$p = e + z \times \sqrt{e \times \frac{1-e}{n}}$$ where: p = true error rate, e = the observed error rate, z = level of confidence, and n is the number of trials. If n is low, p will not be very close to e; as n gets higher p will become closer to e. So in this case, the more data the better the results.
+2. Do the rules make sense? If so why did the algorithm generate good rules? If not, why not?
+    - The rules look like they make sense, nothing seems odd. The results of more points in region 3 makes sense since a majority of the trained data was there. The contents look like they fit too, I think this algorithm generated good rules for this data set.
+3. Does scaling, normalization or leaving the data unscaled make a difference?
+    - For this dataset it does not matter because all of the data used were at a similar scale. However, looking at the equations, I don't think scaling the data is possible, a majority of these equations take the log of a value, which would be invalid for negative numbers and the log function would essentially scale the data anyway. I tried to normalize this data and run it to see what would happen, but I ended up getting an error so I do not think it is possible with this dataset.

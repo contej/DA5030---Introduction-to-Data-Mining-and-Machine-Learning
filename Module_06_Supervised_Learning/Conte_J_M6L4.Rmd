@@ -1,0 +1,234 @@
+---
+title: "M6L4 Homework Assignment"
+author: "Joshua Conte"
+date: "November 5, 2017"
+output: 
+  pdf_document:
+    fig_caption: true
+    latex_engine: xelatex
+header-includes:
+    - \usepackage{fancyhdr}
+    - \pagestyle{fancy}
+    - \fancyhead[CO,CE]{DA5030}
+    - \fancyfoot[CO,CE]{Assignment M6L4 by Joshua Conte}
+    - \fancyfoot[LE,RO]{\thepage}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+&nbsp;
+
+
+\clearpage
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{5}
+\pagebreak
+
+# M6L4 Homework Assignment
+R studio was configured with the following parameters before beginning the project:
+```{r Configure RStudio, warning = FALSE, message = FALSE}
+# clears the console in RStudio
+cat("\014") 
+
+# clears environment
+rm(list = ls())  
+
+# Load required packages
+require(ggplot2)
+require(MASS)
+require(car)
+```
+
+## Load Data.   
+I opened the [Wholesale customers Data Set](https://archive.ics.uci.edu/ml/datasets/Wholesale+customers) using read.csv2 and dodfWCDloaded it directly from the UC Irvine Machine Learning Repository. 
+
+To format the data, the data is separated by ',', stringsAsFactors = FALSE so that the strings in a data frame will be treated as plain strings and not as factor variables. I set na strings for missing data. Once the data was loaded I added the column names and changed the data types to numeric and finally removed the text data type.
+
+Below is my R code:
+```{r open and format the dataset}
+# Some csv files are really big and take a while to open.  This command checks to
+# see if it is already opened, if it is, it does not open it again.
+# I also omitted the first column
+if (!exists("dfWCD")) {
+dfWCD <-
+  read.csv2("Wholesale customers data.csv",
+    sep = ",",
+    stringsAsFactors = FALSE,
+    na.strings=c("","NA")
+  )
+}
+
+# DodfWCDload directly from site (unreliable from Ecuador)
+# if (!exists("dfWCD")) {
+# dfWCD <-
+#   read.csv2(
+#     url(
+#       "https://archive.ics.uci.edu/ml/machine-learning-databases/00292/Wholesale customers data.csv"
+#     ),
+#     sep = ",",
+#     stringsAsFactors = FALSE,
+#     na.strings=c("","NA")
+#   )
+# # Add a column so I know which study the data is referring to
+# study <- sprintf("study_%s",seq(1:440))
+# dfWCD$study<-study
+# }
+
+# change 2 to 24 to numeric
+dfWCD[1:8] <- sapply(dfWCD[1:8], as.numeric)
+
+# Print first lines
+str(dfWCD)
+```
+
+###Understanding the data
+The data set refers to clients of a wholesale distributor in Portugal. It includes the annual spending in monetary units (m.u.) on diverse product categories. The data has the following attribute information:
+
+1. FRESH: annual spending (m.u.) on fresh products (Continuous); 
+2. MILK: annual spending (m.u.) on Fresh products (Continuous); 
+3. GROCERY: annual spending (m.u.)on grocery products (Continuous); 
+4. FROZEN: annual spending (m.u.)on frozen products (Continuous) 
+5. DETERGENTS_PAPER: annual spending (m.u.) on detergents and paper products (Continuous) 
+6. DELICATESSEN: annual spending (m.u.)on and delicatessen products (Continuous); 
+7. CHANNEL: customer channel - 1 = Horeca (Hotel/Restaurant/Cafe) or 2 = Retail 
+8. REGION: Customers Region - 1= Lisnon 2 = Oporto or 3 = Other (Nominal)
+
+## Linear Discriminant Analysis in R
+
+Linear Discriminant Analysis (LDA) is a generalization of Fisher's linear discriminant to find a linear combination of features that characterizes or separates two or more classes of objects or events. Discriminant analysis seeks to generate lines that are efficient for discrimination.
+
+LDA is also closely related to principal component analysis (PCA) and factor analysis in that they both look for linear combinations of variables which best explain the data. In the case of LDA, we are maximizing the linear compenent axes for class discrimination. In the case of PCA, we are finding basis that maximize the variance.
+
+LDA can also be used as a supervised technique by finding a discriminant projection that maximizing between-class distance and minimizing within-class distance.
+
+Below is the R code:
+```{r}
+head(dfWCD)
+summary(dfWCD)
+length(dfWCD)
+```
+
+This plots the data:
+```{r}
+names(dfWCD)
+scatterplotMatrix(dfWCD[3:8])
+pairs(dfWCD[,3:8])
+qplot(dfWCD$Fresh,dfWCD$Detergents_Paper,data=dfWCD)+geom_point(aes(colour = factor(dfWCD$Channel),shape = factor(dfWCD$Channel)))
+qplot(dfWCD$Milk,dfWCD$Fresh,data=dfWCD)+geom_point(aes(colour = factor(dfWCD$Channel),shape = factor(dfWCD$Channel)))
+
+```
+
+Here I am using two predictor variables and Channel as the response variable.
+```{r}
+lsa.m1<-lda(Channel ~ Fresh + Detergents_Paper, data=dfWCD)
+lsa.m1
+```
+
+Here I plotted to see what Fresh and Detergents_Paper looked like
+```{r}
+qplot(dfWCD$Fresh,dfWCD$Detergents_Paper,data=dfWCD)+geom_point(aes(colour = factor(dfWCD$Channel),shape = factor(dfWCD$Channel)))
+
+```
+
+```{r}
+qplot(dfWCD$Frozen,dfWCD$Detergents_Paper,data=dfWCD)+geom_point(aes(colour = factor(dfWCD$Channel),shape = factor(dfWCD$Channel)))
+
+```
+
+
+```{r}
+lsa.m2<-lda(Channel ~ Detergents_Paper + Frozen, data=dfWCD)
+lsa.m2
+```
+
+
+```{r}
+qplot(dfWCD$Fresh,dfWCD$Frozen,data=dfWCD)+geom_point(aes(colour = factor(dfWCD$Channel),shape = factor(dfWCD$Channel)))
+lsa.m3<-lda(Channel ~ Fresh + Detergents_Paper, data=dfWCD)
+lsa.m3
+```
+
+
+```{r}
+names(dfWCD) # Fresh (2) + Malic.acid(3) + Detergents_Paper (4)
+lsa.m2.p<-predict(lsa.m2, newdata = dfWCD[,c(6,7)])
+summary(lsa.m2.p)
+#lsa.m2.p$class
+```
+
+This uses predict to see what it would have gotton based on the model
+```{r}
+lsa.m1.p<-predict(lsa.m1, newdata = dfWCD[,c(3,7)])
+```
+
+This evaluates the models.
+```{r}
+cm.m1<-table(lsa.m1.p$class,dfWCD[,c(1)])
+cm.m1
+cm.m2<-table(lsa.m2.p$class,dfWCD[,c(1)])
+cm.m2
+```
+###Additional predictors
+Three predictors:
+```{r}
+lsa.m4<-lda(Channel ~ Fresh + Detergents_Paper + Frozen, data=dfWCD)
+lsa.m4
+lsa.m4.p<-predict(lsa.m4, newdata = dfWCD[,c(3,7,6)])
+cm.m4<-table(lsa.m4.p$class,dfWCD[,c(1)])
+cm.m4
+```
+
+Four predictors:
+```{r}
+lsa.m5<-lda(Channel ~ Fresh + Detergents_Paper + Frozen + Milk, data=dfWCD)
+lsa.m5
+lsa.m5.p<-predict(lsa.m5, newdata = dfWCD[,c(3,7,6, 4)])
+cm.m5<-table(lsa.m5.p$class,dfWCD[,c(1)])
+cm.m5
+```
+
+Five predictors:
+```{r}
+lsa.m6<-lda(Channel ~ Fresh + Detergents_Paper + Frozen + Milk + Grocery, data=dfWCD)
+lsa.m6
+lsa.m6.p<-predict(lsa.m6, newdata = dfWCD[,c(3,7,6,4,5)])
+cm.m6<-table(lsa.m6.p$class,dfWCD[,c(1)])
+cm.m6
+```
+
+
+###Normalizing and mixing up the data
+```{r}
+# create a random sample for training and test data
+set.seed(12345)
+dfWCD_rand <- dfWCD[order(runif(440)), ]
+
+# normalize
+normalize<- function(x) {
+  return((x-min(x))/(max(x)-min(x)))
+}
+dfWCD_rand.normalized<-as.data.frame(lapply(dfWCD_rand,normalize))
+
+lsa.m1n<-lda(Channel ~ Fresh + Detergents_Paper, data=dfWCD_rand.normalized)
+lsa.m1n
+lsa.m1n.p<-predict(lsa.m1n, newdata = dfWCD[,c(3,7)])
+cm.m1n<-table(lsa.m1n.p$class,dfWCD[,c(1)])
+cm.m1n
+
+lsa.m2n<-lda(Channel ~ Detergents_Paper + Frozen, data=dfWCD_rand.normalized)
+lsa.m2n
+lsa.m2n.p<-predict(lsa.m2n, newdata = dfWCD[,c(6,7)])
+cm.m2n<-table(lsa.m2n.p$class,dfWCD[,c(1)])
+cm.m2n
+
+```
+
+##Questions
+1. Does the number of predictor variables for LDA make a difference? Try for a range of models using differing numbers of predictor variables.
+    - It makes a little difference, but not significant. For 3 predictors, it was the same. With 4 predictors, the numbers improved a little and same with 6.
+2. What determines the number of linear discriminants in LDA.
+    - LDA finds at most k???1 linear discriminants, where k is the number of classes. In my data I have two classes (the Channel variable) hence only 1 linear discriminants can be resolved.
+3. Does scaling, normalization or leaving the data unscaled make a difference for LDA?
+    - Normalizing the data made it different, arguably better for this data.  Without normalizing the data lsa.m1 had 1% error 295 of 298 good in the first column (48% error 74 of 142 in the second), when it was normalized it became 23% error 230 of 298 (3% error 138 of 142 in the second). lsa.m2 was worse, 1% in the first column and 47% in the second, when it was normalized 37% in the first and 3% in the second.
+    
