@@ -37,37 +37,101 @@ Date: December 11, 2017
 \pagebreak
 
 #Abstract
-The final project for the class DA5030 Introduction to Data Mining and Machine Learning is a data mining project that scrapes data from one website and compares it to another and reports the differences. 
+The final project for the class DA5030 Introduction to Data Mining and Machine Learning is a data mining project that scrapes data from the [HGMD](https://www.qiagenbioinformatics.com/products/human-gene-mutation-database/) website and compares it to the [ExAC](http://exac.broadinstitute.org) website and reports the duplicate and unique variants. Then the unique data is analyzed using unsupervised learning algorithms.
 
-#Introduction
-There is a website called, HGMD (https://www.qiagenbioinformatics.com/products/human-gene-mutation-database/), which has a list of all published mutations in every gene. The user enters the specific gene and the website shows a list of all of the published mutations, which contains the variant and position.  However, some of these publications are from 20 years ago where they might not be considered mutations today, now that we have more information. Genetic information is constantly being updated as more research is being conducted.  To check if the published mutation is still considered a mutation, there is another website, Exac (http://exac.broadinstitute.org), which has a list of all known variants for all known genes that are not mutations.  The user can enter the specific gene and get a list of all the variants and the position. Then the variants and positions are compared from each website, if the two match, then the variant is no longer considered a mutation. Currently, geneticists need to perform this analysis manually by visually comparing the websites. The reason I want to do this project is because my wife and her colleges need to do this manually and her bioinformatics department is too busy at this time to find a solution. My hope is to find a solution and present it to her team and eventually get a job in their bioinformatics group.
+#Background
+There is a website called, [HGMD](https://www.qiagenbioinformatics.com/products/human-gene-mutation-database/), which has a list of all published mutations in every gene. The user enters the specific gene and the website shows a list of all of the published mutations, which contains the variant and position.  However, some of these publications are from 20 years ago where they might not be considered mutations today, now that we have more information. Genetic information is constantly being updated as more research is being conducted.  To check if the published mutation is still considered a mutation, there is another website, [ExAC](http://exac.broadinstitute.org), which has a list of all known variants for all known genes that are not mutations.  The user can enter the specific gene and get a list of all the variants and the position. Then the variants and positions are compared from each website, if the two match, then the variant is no longer considered a mutation. Currently, geneticists need to perform this analysis manually by visually comparing the websites. The reason I want to do this project is because my wife and her colleges need to do this manually and her bioinformatics department is too busy at this time to find a solution. My hope is to find a solution and present it to her team and eventually get a job in their bioinformatics group.
 
 To perform this project I plan to have the user enter the URL's with the gene info into R.  Then R will scrape the websites and put the data into data frames.  I will compare the data frames and print the differences.  I am not sure of the details now, I will need to research the best method to do this (use R and compare or make a database with the info and use SQL).  I want to also see if it is possible to enter the gene into R, as a text input, and have R search the database for the gene info then scrape the website, I am not sure if it is possible and I will need to research it.
 
 This project is dependent on if it is possible to use R to scrape the information from the websites, I am not sure if it is possible with R and I am currently trying to figure it out.  Also, I will need permission to use the HGMD website, it is very expensive to get a licenses and I will ask the company for a 2 month trial for a graduate research project. If they give me a trial then I can do it, if not, it is not feasible to pursue this project.
 
+# Data sources 
+Variant data used will be scraped from [ExAC](http://exac.broadinstitute.org) and [HGMD](https://www.qiagenbioinformatics.com/products/human-gene-mutation-database/) websites.
+
+# Algorithms and Data Sets
+##Data Sets
+The r packages used for this assignemt are:
+
+**For scraping and shaping the data**
+
+* rvest[[1]](#ref)
+* RSelenium[[2]](#ref)
+* plyr[[3]](#ref)
+
+**For analysis**
+
+* ggplot2[[4]](#ref)
+* cluster[[5]](#ref)
+* amap[[6]](#ref)
+* useful[[7]](#ref)
+
+##Algorithms
+For analysis I will use unsupervised learning algorithms.
+
+The goal for unsupervised learning is to model the underlying structure or distribution in the data in order to learn more about the data. Algorithms are left to their own devises to discover and present the interesting structure in the data[[8]](#ref).
+
+###Types of  Clustering
+
+Clustering (e.g., k-means, mixture models, hierarchical clustering). Cluster analysis or clustering is the task of grouping a set of objects in such a way that objects in the same group (called a cluster) are more similar (in some sense or another) to each other than to those in other groups (clusters)[[9]](#ref). There are various types of cluster analysis.  
+
+* Partitioning-based clustering (K-means and its variants)
+* Hierarchical clustering
+
+####Partitioning-based clustering
+#####K-means
+k-means clustering is a method of vector quantization, originally from signal processing, that is popular for cluster analysis in data mining. k-means clustering aims to partition n observations into k clusters in which each observation belongs to the cluster with the nearest mean, serving as a prototype of the cluster. This results in a partitioning of the data space into Voronoi cells[[10]](#ref).
+
+#####K-medoids (PAM)
+The K-medoids or Partitioning Around Medoids (PAM) algorithm (Kaufman & Rousseeuw'87) is related to the k-means algorithm and but uses medoid shifts rather than reassigning points based on Euclidean distance. Each cluster is represented by one of the objects (i.e. points) in the cluster A medoid is a point in a cluster whose dissimilarity to all the points in the cluster is minimal. Medoids are similar in concept to means or centroids, but medoids are always members of the data set. That is, in 2D Cartesian space a centroid can be any valid x.y coordinate. Whereas a medoid must be one of the data points[[11]](#ref).
+
+Pseduocode for the k-medoid clustering (Partitioning Around Medoids (PAM)) algorithm:
+```
+Initialize: randomly select[citation needed] (without replacement) k of the n data points as the medoids
+
+Associate each data point to the closest medoid.
+
+While the cost of the configuration decreases:
+  For each medoid m, for each non-medoid data point o:
+    Swap m and o, recompute the cost
+
+  If the total cost of the configuration increased in the previous step, undo   the swap.
+
+```
+
+####Hierarchical clustering
+In hierarchical clustering the idea is to group data objects (i.e. points) into a tree of clusters. That is, hierarchical clustering is a method of cluster analysis which seeks to build a hierarchy of clusters[[12]](#ref). 
+
+These trees (hierarchies) generally fall into two types:
+
+#####Agglomerative hierarchical clustering
+Initially each data object (i.e. point) in its own cluster. Iteratively the clusters are merged together from the "bottom-up." The two most similar/closest objects are aggreated in to the same cluster/data object. Then the next two, until there is just one cluster/data object. This agglomerative approach result in straggly (long and thin) clusters due to a chaining effect. It is also sensitive to noise[[11]](#ref).
+
+#####Divisive hierarchical clustering
+In divisive hierarchical clustering all data objects (i.e. points) are initially in one cluster. These clusters are successively divided recursivley in a "top-down" manner. The cluster is broken in to two clusters that are most dissimilar. Then each of those clusters is broken in to two cluster that are most dissimilar. This continues until each clsuter is a single data object (i.e. point)[[11]](#ref).
+
 # Scraping Websites
 Below is a walkthrough without showing the code. I did this because I needed to use if statements and the first chunk of code is over 250 lines. This section will show what the program does and the next section will show the code.
 
-In order to scrape the Exac website I need to use RSelenium and rvest. This is because the table was constructed using javascript, specifically jQuery. When a website makes use of JavaScript to display data, the rvest and XML packages miss the required functionality.
+In order to scrape the ExAC website I need to use RSelenium and rvest. This is because the table was constructed using javascript, specifically jQuery. When a website makes use of JavaScript to display data, the rvest and XML packages miss the required functionality.
 
 Selenium is a web automation tool that literally "drives" the browser, so it can see anything you see when you right click and inspect element in Chrome or Firefox, making it possible to scrape the information with rvest. This vastly widens the universe of content that can be extracted from automation, but can be slow as all content must be rendered in the browser.
 
 The great thing about RSelenium is that the user does not need to download and install a Selenium server, RSelenium will download it and run it automatically. Below is the R code.
 
-##Scraping the Exac Website
+##Scraping the ExAC Website
 Once RSelenium is up and running, the website is opened through RSelenium as defined in the code, figure 1 shows an example of what it looks like.
 
-![Exac Webpage](exac1.jpg)
+![ExAC Webpage](exac1.jpg)
 
 Then the gene name is automatically entered (this is an input in the code) and RSelenium searches for the gene and scrapes the data and puts it into a data frame. Figure 2 shows an image of the website.
 
-![Exac CHD2 Summary](exac2.jpg)
+![ExAC CHD2 Summary](exac2.jpg)
 
 
 
 ##Scraping the HGMD Website
-Now that the Exac data has been collected it is time to move to HGMD. I began by opening the website, see figure 3 as reference.
+Now that the ExAC data has been collected it is time to move to HGMD. I began by opening the website, see figure 3 as reference.
 
 ![HGMD Webpage](hgmd1.jpg)
 
@@ -180,9 +244,9 @@ rD <- rsDriver()
 # puts a variable to the session
 remDr <- rD$client
 
-# Search Exac
+# Search ExAC
 
-# URL for Exac
+# URL for ExAC
 exac_url <- "http://exac.broadinstitute.org/"
 
 # This goes to the exac website
@@ -427,12 +491,12 @@ if (length(dfExac) == 0) {
 Now that the data has been collected, it is time to compare the two and remove the duplicates and keep what is remaining of the HGMD data.  I also removed some columns that are not needed that does not contain pertinent information
 
 ### Remove Duplicates
-Bfore removing the duplicates, the Exac data needs to be reformated so that the variants are esier to read and the Consequence column will match the Consequence column in the HGMD data:
+Bfore removing the duplicates, the ExAC data needs to be reformated so that the variants are esier to read and the Consequence column will match the Consequence column in the HGMD data:
 ```{r}
 # This section removes duplicates and prints out the unique file,
 # This also prints out the duplicates in a seperate file for reference
 
-# formate the Exac data to make it easier to read and compatible with HGMD
+# formate the ExAC data to make it easier to read and compatible with HGMD
 
 # THe headers were stored in row one, this makes row one the header and then deletes
 # the row
@@ -458,7 +522,7 @@ dfExac$Consequence[dfExac$Consequence == ""] <- NA
 dfExac_sub <- na.omit(dfExac)
 ```
 
-Once the Exac data is formated, then the data can be compared. THis code will check to make sure there is a dataframe and then compare the data and remove all duplicates then print it to a CSV file. It also searches the reference info and pulls out the first publish date of the mutation and puts it inot a new column called year. 
+Once the ExAC data is formated, then the data can be compared. THis code will check to make sure there is a dataframe and then compare the data and remove all duplicates then print it to a CSV file. It also searches the reference info and pulls out the first publish date of the mutation and puts it inot a new column called year. 
 
 I also made it so that the data can tell if it is a missense or nonsense, splice, or framshift for the CHD2 gene, and if it causes loss of function. This will be used to analyze the data.
 
@@ -1178,11 +1242,6 @@ It looks like around 2, the gap increases at a higher slope, so I think a k of 2
 ##Hierarchical clustering in R
 In hierarchical clustering the idea is to group data objects (i.e. points) into a tree of clusters. That is, hierarchical clustering is a method of cluster analysis which seeks to build a hierarchy of clusters.
 
-These trees (hierarchies) generally fall into two types:
-
-1. Agglomerative hierarchical clustering: Initially each data object (i.e. point) in its own cluster. Iteratively the clusters are merged together from the "bottom-up." The two most similar/closest objects are aggreated in to the same cluster/data object. Then the next two, until there is just one cluster/data object. This agglomerative approach result in "straggly" (long and thin) clusters due to a chaining effect. It is also sensitive to noise.
-2. Divisive hierarchical clustering: in divisive hierarchical clustering all data objects (i.e. points) are initially in one cluster. These clusters are successively divided recursivley in a "top-down" manner. The cluster is broken in to two clusters that are most dissimilar. Then each of those clusters is broken in to two cluster that are most dissimilar. This continues until each clsuter is a single data object (i.e. point).
-
 Below is my analysis using Hierarchical clustering:
 ```{r Hierarchical clustering}
 dfHGMDCluster.h.clust<- hclust(d=dist(dfHGMDCluster))
@@ -1234,4 +1293,18 @@ Precision P = 3/(3 + 0) = 1
 
 Recall    R = 3/(3 + 0) = 1
 
+#Conclusion 
 
+#References{#ref}
+1.	Wickham, H. Easily Harvest (Scrape) Web Pages. 2016; Available from: https://cran.r-project.org/web/packages/rvest/rvest.pdf.
+2.	Harrison, J. R Bindings for 'Selenium WebDriver'. 2017; Available from: https://cran.r-project.org/web/packages/RSelenium/RSelenium.pdf.
+3.	Wickham, H., Tools for Splitting, Applying and Combining Data. 2016.
+4.	Wickham, H. ggplot2: Elegant Graphics for Data Analysis. 2009; Available from: http://ggplot2.org.
+5.	Martin Maechler [aut, c., Peter Rousseeuw [aut] (Fortran original), Anja Struyf [aut] (S original), Mia Hubert [aut] (S original), Kurt Hornik [trl, ctb] (port to R; maintenance(1999-2000)), Matthias Studer [ctb], Pierre Roudier [ctb], Juan Gonzalez [ctb]. Finding Groups in Data'': Cluster Analysis Extended Rousseeuw et al. 2017; Available from: https://cran.r-project.org/web/packages/cluster/cluster.pdf.
+6.	Lucas, A. Another Multidimensional Analysis Package. 2014; Available from: https://cran.r-project.org/web/packages/amap/amap.pdf.
+7.	Lander, J.P. A Collection of Handy, Useful Functions. 2017; Available from: https://cran.r-project.org/web/packages/useful/useful.pdf.
+8.	Brownlee, J. Supervised and Unsupervised Machine Learning Algorithms. 2016; Available from: https://machinelearningmastery.com/supervised-and-unsupervised-machine-learning-algorithms/.
+9.	Cluster analysis, in Wikipedia, the free encyclopedia. 2017.
+10.	k-means clustering, in Wikipedia, the free encyclopedia. 2017.
+11.	Brown, N.B., Clustering. Norhteastern University.
+12.	Hierarchical clustering, in Wikipedia, the free encyclopedia. 2017.
