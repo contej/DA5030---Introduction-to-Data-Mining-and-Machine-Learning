@@ -9,7 +9,7 @@ header-includes:
     - \usepackage{fancyhdr}
     - \pagestyle{fancy}
     - \fancyhead[CO,CE]{Northeastern University}
-    - \fancyfoot[CO,CE]{VCF Parser by Joshua Conte}
+    - \fancyfoot[CO,CE]{Variant Data Comparison and Analysis by Joshua Conte}
     - \fancyfoot[LE,RO]{\thepage}
 ---
 
