@@ -487,7 +487,7 @@ if (length(dfExac) == 0) {
 ```
 
 
-## Analyzing the Data
+## Shaping the Data
 Now that the data has been collected, it is time to compare the two and remove the duplicates and keep what is remaining of the HGMD data.  I also removed some columns that are not needed that does not contain pertinent information
 
 ### Remove Duplicates
@@ -861,10 +861,11 @@ any (r %in% c("Arg1000Gln", "Arg1685His", "Val1479Met")))
 apply(dfHGMDMissense_final, 1, function(r)
 any (r %in% c("Arg1000Gln", "Arg1685His", "Val1479Met")))
 ```
-#Analyze the Data
+
+##Analyzing the Data
 I will perform clustering to look how the data is grouped.
 
-##Cluster HGMD Data
+###Cluster HGMD Data
 I cleard the previous data and configured R with the following parameters before beginning the analysis:
 ```{r re-Configure RStudio, warning = FALSE, message = FALSE}
 # clears the console in RStudio
@@ -874,7 +875,7 @@ cat("\014")
 rm(list = ls())  
 ```
 
-### Load Data.   
+####Load Data.   
 I opened the variant data from the gene CHD2 containing all known mutations. 
 
 To format the data, the data is separated by ',', stringsAsFactors = FALSE so that the strings in a data frame will be treated as plain strings and not as factor variables. I set na strings for missing data. 
@@ -895,7 +896,7 @@ if (!exists("dfHGMD_final")) {
 }
 ```
 
-### Formating the data
+####Formating the data
 Inorder to cluster the data I need numeric data. I will make new columns with Consequence, Variantclass, Reported.phenotype, Mutation.type, Overall.consequence, and year converted to numeric.
 
 For Consequence the data will change to:
@@ -1036,18 +1037,18 @@ str(dfHGMDCluster)
 summary(dfHGMDCluster)
 ```
 
-##Clustering
+###Clustering
 Clustering is grouping like with like such that:
 
 1. Similar objects are close to one another within the same cluster.
 2. Dissimilar to the objects in other clusters.
 
 
-###Number of Clusters
+####Number of Clusters
 Before I can begin clustering analysis, I need to determine the number of clusters.
 For determining "the right number of clusters", for this analysis I will use the averaged Silhouette width and Gap statistic and Hartigan's rule.
 
-####Averaged Silhouette Width and Gap Statistic
+#####Averaged Silhouette Width and Gap Statistic
 ```{r determining number of clusters}
 # Determining number of clusters 
 sos <- (nrow(dfHGMDCluster) - 1) * sum(apply(dfHGMDCluster, 2, var))
@@ -1066,7 +1067,7 @@ plot(2:10,
 
 ```
 
-####Hartigan's rule
+#####Hartigan's rule
 ```{r Hartigans rule}
 # Hartigans's rule FitKMean (similarity) 
 # require(useful) 
@@ -1074,13 +1075,13 @@ best<-FitKMeans(dfHGMDCluster,max.clusters=10, seed=111)
 PlotHartigan(best)
 ```
 
-####Number of Clusters Results
+#####Number of Clusters Results
 Based off of the graphs above it looks like I should perform clustering with 2 to 4 clusters. The analysis looks better with 2 after some trial and error.
 
-###Partitioning-based clustering 
+####Partitioning-based clustering 
 Partitioning algorithms construct various partitions and then evaluate them by some criterion Hierarchy algorithms, two examples are k-means and k-mediods algorithms.
 
-####k-means
+#####k-means
 k-means clustering is a method of vector quantization, originally from signal processing. k-means clustering aims to partition n observations into k clusters in which each observation belongs to the cluster with the nearest mean, serving as a prototype of the cluster. This results in a partitioning of the data space into Voronoi cells.
 
 Below I apply the k-means algorithm with a calculation that makes the k-means calculation more stable, it performs this analysis 1000 times and takes the ones with the least error:
@@ -1092,7 +1093,7 @@ dfHGMDCluster.2.cluster <- kmeans(dfHGMDCluster,k, nstart = trails)
 dfHGMDCluster.2.cluster
 ```
 
-#####Evaluating model performance 
+######Evaluating model performance 
 
 ```{r}
 # Evaluating model performance
@@ -1127,7 +1128,7 @@ year <-
 year
 ```
 
-#####Multidimensional scaling (MDS)
+######Multidimensional scaling (MDS)
 Multidimensional scaling (MDS) is a means of visualizing the level of similarity of individual cases of a high-dimenional dataset.
 
 MDS attempts to find an embedding from the I objects into $\mathbb{R}^N$ such that distances are preserved.
@@ -1178,7 +1179,7 @@ Intellectual disability = 4
 
 The plots look OK. There is overlapping in the centroid plot. I wish this would have clustered better.
 
-####K-medoids clustering in R
+#####K-medoids clustering in R
 The K-medoids or Partitioning Around Medoids (PAM) algorithm is related to the k-means algorithm and but uses medoid shifts rather than reassigning points based on Euclidean distance. Each cluster is represented by one of the objects (i.e. points) in the cluster A medoid is a point in a cluster whose dissimilarity to all the points in the cluster is minimal. Medoids are similar in concept to means or centroids, but medoids are always members of the data set. That is, in 2D Cartesian space a centroid can be any valid x.y coordinate. Whereas a medoid must be one of the data points. 
 
 Below I use R to apply the k-medoids algorithm:
@@ -1205,7 +1206,7 @@ The silhouette plot looks good, long lines are good, short ones are not.  It app
 
 The centroid plot looks a little better than the k-means plot, but there seems to be overlap with the clusters.
 
-##Gap statistic
+###Gap statistic
 clusGap() calculates a goodness of clustering measure, the “gap” statistic. For each number of clusters k, it compares $\log(W(k))$ with $E^*[\log(W(k))]$ where the latter is defined via bootstrapping, i.e. simulating from a reference distribution.  
 
 maxSE(f, SE.f) determines the location of the maximum of f, taking a “1-SE rule” into account for the *SE* methods. The default method "firstSEmax" looks for the smallest k such that its value f(k) is not more than 1 standard error away from the first local maximum. This is similar but not the same as "Tibs2001SEmax", Tibshirani et al's recommendation of determining the number of clusters from the gap statistics and their standard deviations.  
@@ -1239,7 +1240,7 @@ gap <-
 
 It looks like around 2, the gap increases at a higher slope, so I think a k of 2 is good.
 
-##Hierarchical clustering in R
+###Hierarchical clustering in R
 In hierarchical clustering the idea is to group data objects (i.e. points) into a tree of clusters. That is, hierarchical clustering is a method of cluster analysis which seeks to build a hierarchy of clusters.
 
 Below is my analysis using Hierarchical clustering:
@@ -1258,7 +1259,7 @@ plot(dfHGMDCluster.h.clust.ce)
 plot(dfHGMDCluster.h.clust.me)
 ```
 
-###Plotting to deterimine the cluster level.
+####Plotting to deterimine the cluster level.
 ```{r Plotting to deterimine the cluster level}
 plot(dfHGMDCluster.h.clust, labels = FALSE)
 rect.hclust(dfHGMDCluster.h.clust, k=2, border="red")
