@@ -209,9 +209,6 @@ cat("\014")
 # clears environment
 rm(list = ls())  
 
-# Set working directory
-setwd("C:/R/DA5030/final project")
-
 # Load required packages
 # For scraping and shaping the data
 library(rvest)
@@ -522,11 +519,48 @@ dfExac$Consequence[dfExac$Consequence == ""] <- NA
 dfExac_sub <- na.omit(dfExac)
 ```
 
-Once the ExAC data is formated, then the data can be compared. THis code will check to make sure there is a dataframe and then compare the data and remove all duplicates then print it to a CSV file. It also searches the reference info and pulls out the first publish date of the mutation and puts it inot a new column called year. 
+###Adding columns and getting the final output
+Once the ExAC data is formatted, then the data can be compared. This code will check to make sure there is a data frame and then compare the data and remove all duplicates then print it to a CSV file (HGMD_final) it also prints the duplicates to a separate file for reference.
 
-I also made it so that the data can tell if it is a missense or nonsense, splice, or framshift for the CHD2 gene, and if it causes loss of function. This will be used to analyze the data.
+####Using regex to make new columns
 
-This code also prints out the duplicate infomration in a seperate file too.
+This code also searches the reference info and pulls out the first publish date of the mutation and puts it into a new column called year. 
+
+I also made a column for mutation type where the data is split up between missense, nonsense, splice, frameshift, or nonframeshift.
+
+To find missense and nonsense data I used grep. I started by finding all nonsense data and using an if statement to add nonsense or missense to the mutation type column:
+```
+# Find nonsense
+nonsense <-
+  grep(".+Term$",
+       dfHGMDMissense_final$Consequence,
+       perl = TRUE,
+       value = TRUE)
+
+# Make new column
+dfHGMDMissense_final$Mutation.type <-
+  ifelse(dfHGMDMissense_final$Consequence == nonsense,
+         "Nonsense",
+         "Missense")
+```
+
+For splicing, if it was from the splice table I added a mutation type column with the word splice:
+```
+# Create mutation type column
+dfHGMDSplice_final$Mutation.type <-
+  rep("splice", nrow(dfHGMDSplice_final))
+```
+If the splice was in an insertion or deletion section then I used:
+```
+gsub(pattern = ".+\\+.+|.+\\-.+",
+     dfHGMDDelete_final_1$Mutation.type,
+     replacement = "splice")
+```
+
+To find frameshifts and nonframeshifts I checked to see if the number of insertions or deletions were a multiple of three. This took many steps and is outlined in the code below.
+
+Once I had the mutation type, I could tell if it caused a loss of function or not. If it is a missense or nonframeshift, then it is "not a loss of function" (nLoF) otherwise it is a "loss of function" (LoF).
+
 ```{r}
 # Compare the data
 
@@ -535,12 +569,11 @@ This code also prints out the duplicate infomration in a seperate file too.
 # and moves to the next data set.
 if (exists("dfHGMDMissense") &&
     is.data.frame(get("dfHGMDMissense")) == 'FALSE') {
-  paste("There is no data to analyze for HGMD Missense")
+  paste("There is no data to analyze for HGMD missense")
 } else {
   # Removing duplicates for Missens
-  
   # This combines the data frames by using plyr
-  df1_mis <- join(dfHGMDMissense, dfExac_sub, type = "full")
+  df1_mis <- join(dfHGMDMissense, dfExac, type = "full")
   
   # This removes the duplicates
   df1_mis <-
@@ -575,30 +608,39 @@ if (exists("dfHGMDMissense") &&
     ))
   
   # Create mutation type column
-  # If the ending in Consequence is Term then it is a Nonsense
-  # Define Nonsense
+  # If the ending in Consequence is Term then it is a nonsense
+  # Define nonsense
   nonsense <-
     grep(".+Term$",
          dfHGMDMissense_final$Consequence,
          perl = TRUE,
          value = TRUE)
   
-  # Make new column
-  dfHGMDMissense_final$Mutation.type <-
-    ifelse(dfHGMDMissense_final$Consequence == nonsense,
-           "Nonsense",
-           "Missense")
+  if (length(nonsense)==0){
+    dfHGMDMissense_final$Mutation.type <-
+      rep("missense", nrow(dfHGMDMissense_final))
+  } else {
+    # Make new column
+    dfHGMDMissense_final$Mutation.type <-
+      ifelse(dfHGMDMissense_final$Consequence == nonsense,
+             "nonsense",
+             "missense")
+  }
   
   # Make overal Consequence column
   dfHGMDMissense_final$Overall.consequence <-
-    ifelse(dfHGMDMissense_final$Mutation.type == "Missense",
+    ifelse(dfHGMDMissense_final$Mutation.type == "missense",
            "nLoF",
            "LoF")
   
   # For reference, this will get all of the duplicates
   # This collects the duplicates
   dfHGMDMissense_Duplicate <-
-    merge(dfExac_sub, dfHGMDMissense, by = "Consequence", all = FALSE)
+    merge(dfExac, dfHGMDMissense, by = "Consequence", all = FALSE)
+  
+  # remove data frames and other objects no longer needed
+  rm("df1_mis", "df2_mis", "keep", "nonsense")
+  
 }
 
 
@@ -612,7 +654,7 @@ if (exists("dfHGMDSplice") &&
   # Removing duplicates for Splice
   
   # This combines the data frames
-  df1_spl <- join(dfHGMDSplice, dfExac_sub, type = "full")
+  df1_spl <- join(dfHGMDSplice, dfExac, type = "full")
   
   # This removes the duplicates
   df1_spl <-
@@ -650,14 +692,17 @@ if (exists("dfHGMDSplice") &&
   
   # Make overal Consequence column
   dfHGMDSplice_final$Overall.consequence <-
-    ifelse(dfHGMDSplice_final$Mutation.type == "Missense",
+    ifelse(dfHGMDSplice_final$Mutation.type == "missense",
            "nLoF",
            "LoF")
   
   # For reference, this will get all of the duplicates
   # This collects the duplicates
   dfHGMDSplice_Duplicate <-
-    merge(dfExac_sub, dfHGMDSplice, by = "Consequence", all = FALSE)
+    merge(dfExac, dfHGMDSplice, by = "Consequence", all = FALSE)
+  
+  # remove data frames and other objects no longer needed
+  rm("df1_spl", "df2_spl", "keep")
 }
 
 
@@ -670,30 +715,28 @@ if (exists("dfHGMDDelete") &&
 } else {
   # Removing duplicates for Deletions
   # This combines the data frames
-  df1_del <- join(dfHGMDDelete, dfExac_sub, type = "full")
+  df1_del <- join(dfHGMDDelete, dfExac, type = "full")
   
   # This removes the duplicates
   df1_del <-
-    df1_del[!(
-      duplicated(df1_del$Consequence) |
-        duplicated(df1_del$Consequence, fromLast = TRUE)
-    ),]
+    df1_del[!(duplicated(df1_del$Consequence) |
+                duplicated(df1_del$Consequence, fromLast = TRUE)),]
   
   # This keeps the rows needed
   keep <-
-    c(
-      "Consequence",
+    c("Consequence",
       "HGMD.deletion",
       "Variantclass",
       "Reported.phenotype",
-      "Reference"
-    )
+      "Reference")
   df2_del <- df1_del[keep]
   
   # This omits all na's and gives the final value with no duplicates
   dfHGMDDelete_final <- na.omit(df2_del)
   
-  # Add columns for additional analysis
+  #### Add columns for additional analysis ####
+  
+  ### Add column year ###
   # Extract publish year from reference and make new column
   dfHGMDDelete_final$Year <-
     as.numeric(sub(
@@ -702,33 +745,97 @@ if (exists("dfHGMDDelete") &&
       dfHGMDDelete_final$Reference
     ))
   
-  # Create mutation type column
-  # If the ending in Consequence is Term then it is a Nonsense
-  # Define Nonsense
-  dfHGMDDelete_final$Mutation.type <- dfHGMDDelete_final$Consequence
+  ### Add Mutation.type coumn ###
+  
+  # make a new dataframe to find mutation types
+  id <- 1:nrow(dfHGMDDelete_final)
+  Mutation.type <- dfHGMDDelete_final$Consequence
+  dfHGMDDelete_final_1 <-
+    data.frame(id, Mutation.type)
+  
   
   # If it has a plus or minus it is a splice
-  dfHGMDDelete_final$Mutation.type <-
+  dfHGMDDelete_final_1$Mutation.type <-
     gsub(pattern = ".+\\+.+|.+\\-.+",
-         dfHGMDDelete_final$Mutation.type,
+         dfHGMDDelete_final_1$Mutation.type,
          replacement = "splice")
   
-  # Everything else should be a frame shif
-  dfHGMDDelete_final$Mutation.type <-
-    gsub(pattern = "c\\..+",
-         dfHGMDDelete_final$Mutation.type,
-         replacement = "frameshift")
+  # Extract number
+  # If it ends in two numbers
+  dfHGMDDelete_final_1$Mutation.type <-
+    gsub(pattern = "c\\..+(\\d\\d)$",
+         dfHGMDDelete_final_1$Mutation.type,
+         replacement = "\\1")
+  
+  # If it ends in one number
+  dfHGMDDelete_final_1$Mutation.type <-
+    gsub(pattern = "c\\..+(\\d)$",
+         dfHGMDDelete_final_1$Mutation.type,
+         replacement = "\\1")
+  
+  # change to int
+  dfHGMDDelete_final_1$Mutation.type2 <-
+    as.integer(dfHGMDDelete_final_1$Mutation.type)
+  
+  # If multiple of 3 it is a non frameshift
+  dfHGMDDelete_final_1$Mutation.type2 <-
+    ifelse(dfHGMDDelete_final_1$Mutation.type2 %% 3 == 0,
+           "nonframeshift",
+           "frameshift")
+  
+  # keep splice
+  dfHGMDDelete_final_1$Mutation.type3 <-
+    ifelse(dfHGMDDelete_final_1$Mutation.type == "splice",
+           "splice",
+           NA)
+  dfHGMDDelete_final_1
+  
+  # Count number of deletions
+  # Make new column to count uppercase
+  dfHGMDDelete_final_1$Mutation.type4 <-
+    sapply(regmatches(
+      dfHGMDDelete_final_1$Mutation.type,
+      gregexpr("[A-Z]", dfHGMDDelete_final_1$Mutation.type, perl = TRUE)
+    ),
+    length)
+  
+  # replace 0 with na
+  dfHGMDDelete_final_1$Mutation.type4[dfHGMDDelete_final_1$Mutation.type4 == 0] <-
+    NA
+  
+  
+  # If multiple of 3 it is a non frameshift
+  dfHGMDDelete_final_1$Mutation.type4 <-
+    ifelse(dfHGMDDelete_final_1$Mutation.type4 %% 3 == 0,
+           "nonframeshift",
+           "frameshift")
+  
+  # Remove original column
+  dfHGMDDelete_final_1$Mutation.type <- NULL
+  
+  # Combine all columns eliminating the na's
+  dfHGMDDelete_final_1 <- apply(dfHGMDDelete_final_1,1,function(x) x[!is.na(x)])
+  dfHGMDDelete_final_1 <- data.frame(t(dfHGMDDelete_final_1))
+  colnames(dfHGMDDelete_final_1) <- c("id", "Mutation.type")
+  
+  # Add mutation type to original dataframe
+  dfHGMDDelete_final$Mutation.type <- dfHGMDDelete_final_1$Mutation.type
   
   # Make overal Consequence column
   dfHGMDDelete_final$Overall.consequence <-
-    ifelse(dfHGMDDelete_final$Mutation.type == "Missense",
+    ifelse(dfHGMDDelete_final$Mutation.type == "nonframeshift",
            "nLoF",
            "LoF")
   
-  # For reference, this will get all of the duplicates
-  # This collects the duplicates
-  dfHGMDDelete_Duplicate <-
-    merge(dfExac_sub, dfHGMDDelete, by = "Consequence", all = FALSE)
+  # remove data frames and other objects no longer needed
+  rm(
+    "dfHGMDDelete_final_1",
+    "Mutation.type",
+    "df1_del",
+    "df2_del",
+    "keep",
+    "id"
+  )
 }
 
 
@@ -740,9 +847,8 @@ if (exists("dfHGMDInsert") &&
   paste("There is no data to analyze for HGMD Insertions")
 } else {
   # Removing duplicates for Inserts
-  
   # This combines the data frames
-  df1_ins <- join(dfHGMDInsert, dfExac_sub, type = "full")
+  df1_ins <- join(dfHGMDInsert, dfExac, type = "full")
   
   # This removes the duplicates
   df1_ins <-
@@ -765,7 +871,9 @@ if (exists("dfHGMDInsert") &&
   # This omits all na's and gives the final value with no duplicates
   dfHGMDInsert_final <- na.omit(df2_ins)
   
-  # Add columns for additional analysis
+  #### Add columns for additional analysis ####
+  
+  ### Add column year ###
   # Extract publish year from reference and make new column
   dfHGMDInsert_final$Year <-
     as.numeric(sub(
@@ -774,43 +882,123 @@ if (exists("dfHGMDInsert") &&
       dfHGMDInsert_final$Reference
     ))
   
-  # Create mutation type column
-  # If the ending in Consequence is Term then it is a Nonsense
-  # Define Nonsense
-  dfHGMDInsert_final$Mutation.type <- dfHGMDInsert_final$Consequence
+  ### Add Mutation.type coumn ###
+  
+  # make a new dataframe to find mutation types
+  id <- 1:nrow(dfHGMDInsert_final)
+  Mutation.type <- dfHGMDInsert_final$Consequence
+  dfHGMDInsert_final_1 <-
+    data.frame(id, Mutation.type)
+  
   
   # If it has a plus or minus it is a splice
-  dfHGMDInsert_final$Mutation.type <-
+  dfHGMDInsert_final_1$Mutation.type <-
     gsub(pattern = ".+\\+.+|.+\\-.+",
-         dfHGMDInsert_final$Mutation.type,
+         dfHGMDInsert_final_1$Mutation.type,
          replacement = "splice")
   
-  # Everything else should be a frame shif
-  dfHGMDInsert_final$Mutation.type <-
-    gsub(pattern = "c\\..+",
-         dfHGMDInsert_final$Mutation.type,
-         replacement = "frameshift")
+  # Extract number
+  # If it ends in two numbers
+  dfHGMDInsert_final_1$Mutation.type <-
+    gsub(pattern = "c\\..+(\\d\\d)$",
+         dfHGMDInsert_final_1$Mutation.type,
+         replacement = "\\1")
+  
+  # If it ends in one number
+  dfHGMDInsert_final_1$Mutation.type <-
+    gsub(pattern = "c\\..+(\\d)$",
+         dfHGMDInsert_final_1$Mutation.type,
+         replacement = "\\1")
+  
+  # change to int
+  dfHGMDInsert_final_1$Mutation.type2 <-
+    as.integer(dfHGMDInsert_final_1$Mutation.type)
+  
+  # If multiple of 3 it is a non frameshift
+  dfHGMDInsert_final_1$Mutation.type2 <-
+    ifelse(dfHGMDInsert_final_1$Mutation.type2 %% 3 == 0,
+           "nonframeshift",
+           "frameshift")
+  
+  # keep splice
+  dfHGMDInsert_final_1$Mutation.type3 <-
+    ifelse(dfHGMDInsert_final_1$Mutation.type == "splice",
+           "splice",
+           NA)
+  dfHGMDInsert_final_1
+  
+  # Count number of deletions
+  # Make new column to count uppercase
+  dfHGMDInsert_final_1$Mutation.type4 <-
+    sapply(regmatches(
+      dfHGMDInsert_final_1$Mutation.type,
+      gregexpr("[A-Z]", dfHGMDInsert_final_1$Mutation.type, perl = TRUE)
+    ),
+    length)
+  
+  # replace 0 with na
+  dfHGMDInsert_final_1$Mutation.type4[dfHGMDInsert_final_1$Mutation.type4 == 0] <-
+    NA
+  
+  
+  # If multiple of 3 it is a non frameshift
+  dfHGMDInsert_final_1$Mutation.type4 <-
+    ifelse(dfHGMDInsert_final_1$Mutation.type4 %% 3 == 0,
+           "nonframeshift",
+           "frameshift")
+  
+  # Remove original column
+  dfHGMDInsert_final_1$Mutation.type <- NULL
+  
+  # Combine all columns eliminating the na's
+  dfHGMDInsert_final_1 <- apply(dfHGMDInsert_final_1,1,function(x) x[!is.na(x)])
+  dfHGMDInsert_final_1 <- data.frame(t(dfHGMDInsert_final_1))
+  colnames(dfHGMDInsert_final_1) <- c("id", "Mutation.type")
+  
+  # Add mutation type to original dataframe
+  dfHGMDInsert_final$Mutation.type <- dfHGMDInsert_final_1$Mutation.type
   
   # Make overal Consequence column
   dfHGMDInsert_final$Overall.consequence <-
-    ifelse(dfHGMDInsert_final$Mutation.type == "Missense",
+    ifelse(dfHGMDInsert_final$Mutation.type == "nonframeshift",
            "nLoF",
            "LoF")
   
-  
-  # For reference, this will get all of the duplicates
-  # This collects the duplicates
-  dfHGMDInsert_Duplicate <-
-    merge(dfExac_sub, dfHGMDInsert, by = "Consequence", all = FALSE)
+  # remove data frames and other objects no longer needed
+  rm(
+    "dfHGMDInsert_final_1",
+    "Mutation.type",
+    "df1_ins",
+    "df2_ins",
+    "keep",
+    "id"
+  )
 }
 
 # This merges all non-duplicate data
-dfHGMD_final <-
-  join(dfHGMDMissense_final, dfHGMDSplice_final, type = "full")
-dfHGMD_final <-
-  join(dfHGMD_final, dfHGMDDelete_final, type = "full")
-dfHGMD_final <-
-  join(dfHGMD_final, dfHGMDInsert_final, type = "full")
+# Initialize data frame
+dfHGMD_final <- data.frame(stringsAsFactors=FALSE)
+
+# Add data if exists
+if (exists("dfHGMDMissense_final")) {
+  dfHGMD_final <-
+    join(dfHGMD_final, dfHGMDMissense_final, type = "full")
+}
+
+if (exists("dfHGMDSplice_final")) {
+  dfHGMD_final <-
+    join(dfHGMD_final, dfHGMDSplice_final, type = "full")
+}
+
+if (exists("dfHGMDDelete_final")) {
+  dfHGMD_final <-
+    join(dfHGMD_final, dfHGMDDelete_final, type = "full")
+}
+
+if (exists("dfHGMDInsert_final")) {
+  dfHGMD_final <-
+    join(dfHGMD_final, dfHGMDInsert_final, type = "full")
+}
 
 # This checks to see if there are non-duplicates to write to a file
 rowIns_final <- nrow(dfHGMD_final)
@@ -826,12 +1014,30 @@ if (rowIns_final > 0) {
 
 
 # This merges all duplicate data
-dfHGMD_Duplicate <-
-  join(dfHGMDMissense_Duplicate, dfHGMDSplice_Duplicate, type = "full")
-dfHGMD_Duplicate <-
-  join(dfHGMD_Duplicate, dfHGMDDelete_Duplicate, type = "full")
-dfHGMD_Duplicate <-
-  join(dfHGMD_Duplicate, dfHGMDInsert_Duplicate, type = "full")
+# Initialize data frame
+dfHGMD_Duplicate <- data.frame(stringsAsFactors=FALSE) 
+
+# Add data if exists
+if (exists("dfHGMDMissense_Duplicate")) {
+  dfHGMD_Duplicate <-
+    join(dfHGMD_Duplicate, dfHGMDMissense_Duplicate, type = "full")
+}
+
+if (exists("dfHGMDSplice_Duplicate")) {
+  dfHGMD_Duplicate <-
+    join(dfHGMD_Duplicate, dfHGMDSplice_Duplicate, type = "full")
+}
+
+if (exists("dfHGMDDelete_Duplicate")) {
+  dfHGMD_Duplicate <-
+    join(dfHGMD_Duplicate, dfHGMDDelete_Duplicate, type = "full")
+}
+
+if (exists("dfHGMDInsert_Duplicate")) {
+  dfHGMD_Duplicate <-
+    join(dfHGMD_Duplicate, dfHGMDInsert_Duplicate, type = "full")
+}
+
 
 # This checks to see if there are duplicates to write to a file
 rowIns_Duplicate <- nrow(dfHGMD_Duplicate)
@@ -844,6 +1050,7 @@ if (rowIns_Duplicate > 0) {
     row.names = FALSE
   )
 }
+
 ```
 
 ####Verifying Results
@@ -995,13 +1202,13 @@ dfHGMD_final$Mutation.type.num <-
 
 # Missense = 2
 dfHGMD_final$Mutation.type.num <-
-  gsub("^Missense",
+  gsub("^missense",
        dfHGMD_final$Mutation.type.num,
        replacement = "2")
 
 # Nonsense = 3
 dfHGMD_final$Mutation.type.num <-
-  gsub("^Nonsense",
+  gsub("^nonsense",
        dfHGMD_final$Mutation.type.num,
        replacement = "3")
 
@@ -1010,6 +1217,12 @@ dfHGMD_final$Mutation.type.num <-
   gsub("^splice",
        dfHGMD_final$Mutation.type.num,
        replacement = "4")
+
+# nonframeshift = 5
+dfHGMD_final$Mutation.type.num <-
+  gsub("^nonframeshift",
+       dfHGMD_final$Mutation.type.num,
+       replacement = "5")
 ```
 
 Change data to numeric and make new dataframe:

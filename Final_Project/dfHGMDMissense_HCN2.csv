@@ -1,0 +1,6 @@
+"HGMDaccession","HGMD.codonchange","Consequence","HGVS.nucleotide.","HGVS.protein.","Variantclass","Reported.phenotype","Reference","Extrainformation"
+NA,"TCG-TTG","Ser126Leu","c.377C>T","p.S126L","DM","Febrile seizures","Nakamura (2013) PLoS One 8, e80376","hg38  hg19  CpG"
+NA,"CGC-TGC","Arg327Cys","c.979C>T","p.R327C","DM?","Tetralogy of Fallot","Grunert (2014) Hum Mol Genet 23, 3115","hg38  hg19 COM CpG"
+NA,"GAG-AAG","Glu515Lys","c.1543G>A","p.E515K","DM","Epilepsy, idiopathic generalised","Difrancesco (2011) J Neurosci 31, 17327","hg38  hg19  CpG  dbSNP"
+NA,"TTC-TGC","Phe738Cys","c.2213T>G","p.F738C","DM?","Sudden unexpected death in epilepsy","Tu (2011) Brain Pathol 21, 692","hg38  hg19"
+NA,"CCC-TCC","Pro802Ser","c.2404C>T","p.P802S","DM?","Sudden unexpected death in epilepsy","Tu (2011) Brain Pathol 21, 692","hg38  hg19"

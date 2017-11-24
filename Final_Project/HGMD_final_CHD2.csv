@@ -1,0 +1,32 @@
+"Consequence","HGMD.codonchange","HGVS.nucleotide.","HGVS.protein.","Variantclass","Reported.phenotype","Reference","Year","Mutation.type","Overall.consequence","HGMD.splicing.mutation","HGMD.deletion","HGMD.insertion"
+"Ser112Term","TCA-TGA","c.335C>G","p.S112*","DM","Intellectual disability","Hamdan (2014) PLoS Genet 10, e1004772",2014,"nonsense","LoF",NA,NA,NA
+"Arg121Term","CGA-TGA","c.361C>T","p.R121*","DM","Epileptic encephalopathy","Carvill (2013) Nat Genet 45, 825",2013,"nonsense","LoF",NA,NA,NA
+"Pro218Leu","CCC-CTC","c.653C>T","p.P218L","DM?","Eyelid myoclonia with absences","Galizia (2015) Brain 138, 1198",2015,"missense","nLoF",NA,NA,NA
+"Arg466Term","CGA-TGA","c.1396C>T","p.R466*","DM","Dravet syndrome-like myoclonic epileptic encephalopathy","Suls (2013) Am J Hum Genet 93, 967",2013,"missense","nLoF",NA,NA,NA
+"Leu823Pro","CTG-CCG","c.2468T>C","p.L823P","DM","Epileptic encephalopathy","Carvill (2013) Nat Genet 45, 825",2013,"missense","nLoF",NA,NA,NA
+"Asp856Gly","GAT-GGT","c.2567A>G","p.D856G","DM?","Autism","Neale (2012) Nature 4855, 242Uddin (2014) Nat Genet 46: 742 [Additional report]",2012,"missense","nLoF",NA,NA,NA
+"Gln906Term","CAA-TAA","c.2716C>T","p.Q906*","DM?","Autism spectrum disorder","Yuen (2017) Nat Neurosci 20, 602",2017,"missense","nLoF",NA,NA,NA
+"Gly1174Asp","GGT-GAT","c.3521G>A","p.G1174D","DM?","Autism spectrum disorder","Wang (2016) Nat Commun 7, 13316",2016,"missense","nLoF",NA,NA,NA
+"Arg1313Gly","CGA-GGA","c.3937C>G","p.R1313G","DM","Epilepsy, photosensitive","Galizia (2015) Brain 138, 1198",2015,"missense","nLoF",NA,NA,NA
+"Arg1345Gln","CGG-CAG","c.4034G>A","p.R1345Q","DM","Epilepsy, juvenile myoclonic","Galizia (2015) Brain 138, 1198",2015,"missense","nLoF",NA,NA,NA
+"Ser1406Gly","AGT-GGT","c.4216A>G","p.S1406G","DM?","Autism spectrum disorder","Yuen (2017) Nat Neurosci 20, 602",2017,"missense","nLoF",NA,NA,NA
+"Trp1534Cys","TGG-TGT","c.4602G>T","p.W1534C","DM?","Epileptic encephalopathy, early onset","Helbig (2016) Genet Med Epub, Epub",2016,"missense","nLoF",NA,NA,NA
+"Arg1637Term","CGA-TGA","c.4909C>T","p.R1637*","DM","Epilepsy, idiopathic photosensitive occipital","Galizia (2015) Brain 138, 1198O'Roak (2014) Nat Commun 5: 5595 [Additional phenotype]",2015,"nonsense","LoF",NA,NA,NA
+"Gln1641Term","CAG-TAG","c.4921C>T","p.Q1641*","DM?","Autism","O'Roak (2014) Nat Commun 5, 5595",2014,"nonsense","LoF",NA,NA,NA
+"Trp1657Term","TGG-TGA","c.4971G>A","p.W1657*","DM","Dravet syndrome-like myoclonic epileptic encephalopathy","Suls (2013) Am J Hum Genet 93, 967",2013,"nonsense","LoF",NA,NA,NA
+"Arg1679Term","CGA-TGA","c.5035C>T","p.R1679*","DM?","Epilepsy","Helbig (2016) Genet Med Epub, EpubFarwell (2015) Genet Med 17: 578 [Additional phenotype]Wang (2017) Sci Rep 7: 40319 [Additional phenotype]",2016,"nonsense","LoF",NA,NA,NA
+"c.390C>T",NA,NA,NA,"DM?","Lennox-Gastaut syndrome","Appenzeller (2014) Am J Hum Genet 95, 360",2014,"splice","LoF","IVS3 as C-T +9",NA,NA
+"c.1502+1G>A",NA,NA,NA,"DM","Lennox-Gastaut syndrome","Allen (2013) Nature 501, 217",2013,"splice","LoF","IVS12 ds G-A +1",NA,NA
+"c.1719+5G>A",NA,NA,NA,"DM","Epilepsy, photosensitive","Galizia (2015) Brain 138, 1198",2015,"splice","LoF","IVS13 ds G-A +5",NA,NA
+"c.1810-2A>C",NA,NA,NA,"DM","Dravet syndrome-like myoclonic epileptic encephalopathy","Suls (2013) Am J Hum Genet 93, 967",2013,"splice","LoF","IVS14 as A-C -2",NA,NA
+"c.1552delC",NA,NA,NA,"DM?","Moderate intellectual disability, autism spectrum disorder and obsessive compulsive disorder","Bowling (2017) Genome Med 9,",2017,"frameshift","LoF",NA,"GAAAG^516ACCATcCAGACCATAT",NA
+"c.1809+1delG",NA,NA,NA,"DM?","Intellectual disability, nonsyndromic","Rauch (2012) Lancet 380, 1674O'Roak (2014) Nat Commun 5: 5595 [Additional phenotype]",2012,"splice","LoF",NA,"GAAAGAT^603AAG_E15I15_gTGTGTAATTA",NA
+"c.1880_1883delCTTT",NA,NA,NA,"DM","Epileptic encephalopathy","Møller (2016) Mol Syndromol 7, 210",2016,"frameshift","LoF",NA,"AATGAT^626GACTctttATTGTATAAA",NA
+"c.2895_2898delAGAA",NA,NA,NA,"DM?","Autism","O'Roak (2014) Nat Commun 5, 5595",2014,"frameshift","LoF",NA,"CTTTT^964AATAAagaaGAGCTGACAG",NA
+"c.3734delA",NA,NA,NA,"DM?","Autism spectrum disorder","Bi (2012) Hum Mutat 33, 1635Galizia (2015) Brain 138: 1198 [Additional phenotype]",2012,"frameshift","LoF",NA,"GAAAAA^1244AAAAa_E29I29_GTGAGTATAT",NA
+"c.4233_4236delAGAA",NA,NA,NA,"DM","Epilepsy, generalised","Galizia (2015) Brain 138, 1198",2015,"frameshift","LoF",NA,"GGAAA^1410GACAAagaaGGGGACAAGG",NA
+"c.4256_4274del19",NA,NA,NA,"DM","Epilepsy, myoclonic-atonic","Trivisano (2015) Epilepsy Behav 51, 53",2015,"frameshift","LoF",NA,"GAAAGA^1418AAGAagtcaaaagataagaaagaGAAG_EI_GTAATG",NA
+"c.3787dupG",NA,NA,NA,"DM?","Moderate intellectual disability, seizures and speech delay","Bowling (2017) Genome Med 9,",2017,"frameshift","LoF",NA,NA,"GAGTGG^1262GGGGgTGGAAGATGA"
+"c.4173dupA",NA,NA,NA,"DM","Lennox-Gastaut syndrome","Lund (2014) Epilepsy Behav 33C, 18Galizia (2015) Brain 138: 1198 [Additional phenotype]Pinto (2016) Brain Dev :  [Additional phenotype]",2014,"frameshift","LoF",NA,NA,"GAAAAAA^1391AAAaCAGAAGAAGA"
+"c.4949dupG",NA,NA,NA,"DM?","Autism","O'Roak (2014) Nat Commun 5, 5595",2014,"frameshift","LoF",NA,NA,"ACTAT^1649GGTGGgTGGCAACAAC"
+"c.5094dupG",NA,NA,NA,"DM","Intellectual disability","Gauthier-Vasserot (2017) Am J Med Genet A 173, 62",2017,"frameshift","LoF",NA,NA,"CAGAAAG^1698AGGgCCTTATGACC"
